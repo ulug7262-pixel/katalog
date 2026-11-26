@@ -369,7 +369,7 @@ function coDetail(c){
   if(!r||!r.ok){ sb.innerHTML='<div class="empty">'+esc((r&&r.msg)||t('oNet'))+'</div>'; return }
   var h='<div class="bigdebt" style="margin:0 0 12px;padding:16px"><small>'+(ru?'Остаток долга':'Qolgan qarz')+'</small><div style="font-size:26px">'+fmt(r.bal)+'</div></div>';
   h+='<div class="sm" style="text-align:center;color:var(--muted);margin:0 0 12px">'+(ru?'Всего в долг: ':'Jami qarz: ')+fmt(r.debt)+' · '+(ru?'оплачено: ':'to‘langan: ')+fmt(r.paid)+'</div>';
-  if(r.bal>0){
+  if(r.bal>0&&r.canPay){
    var IS='width:100%;box-sizing:border-box;padding:12px;font-size:16px;border:1px solid rgba(128,128,128,.4);border-radius:10px;background:var(--surface);color:inherit;margin:6px 0';
    h+='<div class="so"><div class="h"><b>'+(ru?'Принять оплату':'To‘lovni qabul qilish')+'</b></div><input id="pa" inputmode="numeric" autocomplete="off" placeholder="'+(ru?'Сумма':'Summa')+'" style="'+IS+'"><input id="pn" autocomplete="off" placeholder="'+(ru?'Комментарий (необязательно)':'Izoh (ixtiyoriy)')+'" style="'+IS+'"><div class="bt"><button id="pf">'+(ru?'Весь остаток':'To‘liq qoldiq')+'</button><button id="pb">💵 '+(ru?'Принять':'Qabul qilish')+'</button></div></div>';
   }
