@@ -268,7 +268,7 @@ function contactHtml(o){ var c=contactInfo(o); if(!c.tg&&!c.tel) return '';
 function tgLink(o){ if(o.tgu) return 'https://t.me/'+o.tgu; var d=String(o.phone||'').replace(/\D/g,''); return d?'https://t.me/+'+d:'https://t.me/' }
 function drawStaff(){
  var r=SF.list||{open:[],debt:[],total:0}, sb=$('sb');
- var h='<div class="tabs"><button id="t1" aria-pressed="'+(SF.tab==='open')+'">'+t('op')+' ('+r.open.length+')</button><button id="t2" aria-pressed="'+(SF.tab==='debt')+'">'+t('unp')+' ('+r.debt.length+')</button><button id="t3" aria-pressed="'+(SF.tab==='co')+'">'+(lang==='ru'?'Должники':'Qarzdorlar')+'</button></div>';
+ var h='<div class="tabs"><button id="t1" aria-pressed="'+(SF.tab==='open')+'">'+t('op')+' ('+r.open.length+')</button><button id="t2" aria-pressed="'+(SF.tab==='debt')+'">'+t('unp')+' ('+r.debt.length+')</button>'+(ME&&ME.adm?'<button id="t3" aria-pressed="'+(SF.tab==='co')+'">'+(lang==='ru'?'Должники':'Qarzdorlar')+'</button>':'')+'</div>';
  if(SF.tab==='debt') h+='<div class="bigdebt" style="margin:0 0 12px;padding:16px"><small>'+t('tdebt')+'</small><div style="font-size:26px">'+fmt(r.total)+'</div></div>';
  if(SF.tab==='co'){ drawCo(h); return }
  var L=SF.tab==='debt'?r.debt:r.open;
@@ -283,7 +283,7 @@ function drawStaff(){
  sb.innerHTML=h;
  Array.prototype.forEach.call(sb.querySelectorAll('[data-tel]'),function(a){ a.onclick=function(e){ e.preventDefault(); var h=a.getAttribute('href'); try{ window.location.href=h }catch(err){} } });
  Array.prototype.forEach.call(sb.querySelectorAll('[data-tg]'),function(a){ a.onclick=function(e){ try{ if(tg&&tg.openTelegramLink){ e.preventDefault(); tg.openTelegramLink(a.getAttribute('href')) } }catch(err){} } });
- $('t1').onclick=function(){SF.tab='open';drawStaff()}; $('t2').onclick=function(){SF.tab='debt';drawStaff()}; $('t3').onclick=function(){SF.tab='co';drawStaff()};
+ $('t1').onclick=function(){SF.tab='open';drawStaff()}; $('t2').onclick=function(){SF.tab='debt';drawStaff()}; if($('t3')) $('t3').onclick=function(){SF.tab='co';drawStaff()};
  Array.prototype.forEach.call(sb.querySelectorAll('[data-a]'),function(b){ b.onclick=function(){ staffAct(b.dataset.a,L[+b.dataset.i]) } });
 }
 function wiz(o,body){ sTop((lang==='ru'?'Заказ №':'Buyurtma №')+o.id,function(){ renderStaff() }); $('sb').innerHTML='<div class="ord1"><b>'+esc(o.name)+'</b><div class="sm">'+esc(o.qty)+' '+t('pcs')+' · '+esc(o.cust)+'</div></div>'+body }
