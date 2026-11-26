@@ -223,6 +223,7 @@ function engLbl(e){ if(lang==='ru') return e; return {'Без гравировк
 function renderView(){
  if(state.view==='staff'){ renderStaff(); return }
  if(state.view==='stats'){ renderStats(); return }
+ lg(state.view==='debt'?'Qarz bolimini korildi':'Buyurtmalar bolimini korildi','');
  var h='<div class="top"><button class="back" id="back" aria-label="'+t('back')+'">←</button><div class="grow"><h1>'+t(state.view==='debt'?'debt':'myo')+'</h1></div>'+langBtn()+'</div>';
  if(state.view==='debt'){
   h+='<div class="bigdebt"><small>'+t('tdebt')+'</small><div>'+fmt(ME&&ME.debt||0)+'</div></div>';
@@ -541,7 +542,7 @@ function render(){
 }
 
 function openSheet(id){
- var x=DATA.products.filter(function(p){return p.id===id})[0]; if(!x) return;
+ var x=DATA.products.filter(function(p){return p.id===id})[0]; if(!x) return; lg('Tovar korildi',(x.name||'')+' ['+id+']');
  var both=!!(x.price&&x.priceE), engr=!x.price, openDesc=false;
  var slides=x.photos.map(function(u){return {t:'img',u:u}}); if(x.video) slides.push({t:'vid'});
  function gal(){
@@ -577,6 +578,8 @@ function openSheet(id){
 }
 function botLink(id){ var url='https://t.me/'+DATA.bot+(id?'?start='+encodeURIComponent(id):'');
  try{ if(tg&&tg.openTelegramLink){ tg.openTelegramLink(url); tg.close&&setTimeout(function(){tg.close()},300) } else window.open(url,'_blank') }catch(e){ window.open(url,'_blank') } }
+var LGQ={};
+function lg(w,x){ try{ var init=(tg&&tg.initData)||''; if(!init||window.DEMO_API) return; var k=w+'|'+x, n=Date.now(); if(LGQ[k]&&n-LGQ[k]<60000) return; LGQ[k]=n; api({act:'lg',d:init,w:w,x:x},function(){}) }catch(e){} }
 function api(params,cb){
  if(window.DEMO_API){ setTimeout(function(){ cb(window.DEMO_API(params)) },120); return }
  var q=''; for(var k in params) q+='&'+k+'='+encodeURIComponent(params[k]);
