@@ -235,6 +235,7 @@ function renderView(){
   });
  } else {
   var L=(ME&&ME.orders)||[];
+   if(ME&&ME.debt>0) h+='<div class="bigdebt" style="margin:0 0 12px;padding:16px"><small>'+t('tdebt')+'</small><div style="font-size:26px">'+fmt(ME.debt)+'</div>'+(ME.company?'<div class="sm" style="opacity:.9;margin-top:4px">🏢 '+esc(ME.company)+'</div>':'')+'</div>';
   if(!L.length) h+='<div class="empty">'+t('noo')+'</div>';
   L.forEach(function(o){
    var st={book:t('sBook'),debt:t('sDebt'),done:t('sDone'),'new':t('sNew')}[o.st]||t('sNew');
