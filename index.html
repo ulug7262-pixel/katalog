@@ -226,6 +226,7 @@ function renderView(){
  var h='<div class="top"><button class="back" id="back" aria-label="'+t('back')+'">←</button><div class="grow"><h1>'+t(state.view==='debt'?'debt':'myo')+'</h1></div>'+langBtn()+'</div>';
  if(state.view==='debt'){
   h+='<div class="bigdebt"><small>'+t('tdebt')+'</small><div>'+fmt(ME&&ME.debt||0)+'</div></div>';
+  if(ME&&ME.avans>0) h+='<div style="background:var(--accent);color:var(--accent-ink);border-radius:18px;padding:16px;text-align:center;margin-top:12px"><small style="display:block;opacity:.85">'+(lang==='ru'?'Аванс (предоплата)':'Avans (oldindan to‘lov)')+'</small><div style="font:700 26px var(--f-head)">+'+fmt(ME.avans)+'</div></div>';
   var ruD=lang==='ru';
   if(ME&&ME.company) h+='<div class="sm" style="text-align:center;color:var(--muted);margin:10px 0 0">🏢 '+esc(ME.company)+'</div>';
   if(ME&&ME.paid>0) h+='<div class="sm" style="text-align:center;color:var(--muted);margin:6px 0 0">'+(ruD?'Всего в долг: ':'Jami qarz: ')+fmt(ME.gross)+' · '+(ruD?'оплачено: ':'to‘langan: ')+fmt(ME.paid)+'</div>';
@@ -236,6 +237,7 @@ function renderView(){
   });
  } else {
   var L=(ME&&ME.orders)||[];
+   if(ME&&ME.avans>0&&!(ME.debt>0)) h+='<div style="background:var(--accent);color:var(--accent-ink);border-radius:18px;padding:16px;text-align:center;margin-top:12px"><small style="display:block;opacity:.85">'+(lang==='ru'?'Аванс (предоплата)':'Avans (oldindan to‘lov)')+'</small><div style="font:700 26px var(--f-head)">+'+fmt(ME.avans)+'</div></div>'.replace('margin-top:12px','margin:0 0 12px');
    if(ME&&ME.debt>0) h+='<div class="bigdebt" style="margin:0 0 12px;padding:16px"><small>'+t('tdebt')+'</small><div style="font-size:26px">'+fmt(ME.debt)+'</div>'+(ME.company?'<div class="sm" style="opacity:.9;margin-top:4px">🏢 '+esc(ME.company)+'</div>':'')+'</div>';
   if(!L.length) h+='<div class="empty">'+t('noo')+'</div>';
   L.forEach(function(o){
@@ -307,6 +309,7 @@ function post(o,cb){
 }
 function payStep(o,pre){
  var ru=lang==='ru', later=SF.tab!=='debt';
+ if(later&&!o.avc){ o.avc=1; post({act:'sa',id:o.id,row:o.row},function(r){ if(r&&r.ok&&r.auto){ sAlert(ru?'Оплачено с аванса клиента':'Mijoz avansidan to‘landi'); closeStep(o); return } payStep(o,pre) }); return }
  var L=[['card',ru?'💳 Карта':'💳 Karta'],['cash',ru?'💵 Наличные':'💵 Naqd'],['transfer',ru?'🏦 Перечисление':'🏦 Perechisleniya']]; if(later) L.push(['later',ru?'⏳ Позже (в долг)':'⏳ Keyinroq (qarz)']);
  wiz(o,(pre?'<div class="msg" style="background:var(--chip);border-radius:12px;padding:12px;margin:8px 0">'+pre+'</div>':'')+'<h4 style="font:700 16px var(--f-head);margin:6px 0">'+(ru?'Как оплачено?':'Qanday to‘langan?')+'</h4><div class="pick" style="grid-template-columns:1fr">'+L.map(function(x){return '<button data-p="'+x[0]+'">'+x[1]+'</button>'}).join('')+'</div>');
  Array.prototype.forEach.call(document.querySelectorAll('[data-p]'),function(b){ b.onclick=function(){ var ty=b.dataset.p; post({act:'sp',id:o.id,row:o.row,p:ty},function(r){ if(!r.ok){ sAlert(r.msg||t('oNet')); return }
@@ -352,13 +355,13 @@ function drawCo(h){
  var sb=$('sb'), ru=lang==='ru';
  if(!SF.co){
   sb.innerHTML=h+'<div class="load">…</div>'; tabsGo();
-  post({act:'bl'},function(r){ if(!r||!r.ok){ sb.innerHTML=h+'<div class="empty">'+esc((r&&r.msg)||t('oNet'))+'</div>'; tabsGo(); return } SF.co=r.list||[]; SF.coTotal=r.total||0; drawStaff() });
+  post({act:'bl'},function(r){ if(!r||!r.ok){ sb.innerHTML=h+'<div class="empty">'+esc((r&&r.msg)||t('oNet'))+'</div>'; tabsGo(); return } SF.co=(r.list||[]).concat((r.adv||[]).map(function(a){return {key:a.key,label:a.label,bal:-a.avans,n:a.n,paid:a.paid,debt:a.debt}})); SF.coTotal=r.total||0; drawStaff() });
   return;
  }
  h+='<div class="bigdebt" style="margin:0 0 12px;padding:16px"><small>'+(ru?'Общий долг компаний':'Kompaniyalar umumiy qarzi')+'</small><div style="font-size:26px">'+fmt(SF.coTotal)+'</div></div>';
  if(!SF.co.length) h+='<div class="empty">—</div>';
  SF.co.forEach(function(c,i){
-  h+='<div class="so"><div class="h"><b>'+esc(c.label)+'</b><span class="id" style="font-weight:700;color:var(--ink)">'+fmt(c.bal)+'</span></div><div class="sm" style="color:var(--muted);font-size:12.5px;margin-top:3px">'+(ru?'Заказов: ':'Buyurtmalar: ')+c.n+(c.paid?' · '+(ru?'оплачено ':'to‘langan ')+fmt(c.paid)+' / '+fmt(c.debt):'')+'</div><div class="bt"><button data-co="'+i+'">'+(ru?'💵 Принять оплату / подробно':'💵 To‘lov / batafsil')+'</button></div></div>';
+  h+='<div class="so"><div class="h"><b>'+esc(c.label)+'</b><span class="id" style="font-weight:700;color:var(--ink)">'+(c.bal<0?'+'+fmt(-c.bal)+(ru?' аванс':' avans'):fmt(c.bal))+'</span></div><div class="sm" style="color:var(--muted);font-size:12.5px;margin-top:3px">'+(ru?'Заказов: ':'Buyurtmalar: ')+c.n+(c.paid?' · '+(ru?'оплачено ':'to‘langan ')+fmt(c.paid)+' / '+fmt(c.debt):'')+'</div><div class="bt"><button data-co="'+i+'">'+(ru?'💵 Принять оплату / подробно':'💵 To‘lov / batafsil')+'</button></div></div>';
  });
  sb.innerHTML=h; tabsGo();
  Array.prototype.forEach.call(sb.querySelectorAll('[data-co]'),function(b){ b.onclick=function(){ coDetail(SF.co[+b.dataset.co]) } });
@@ -369,9 +372,9 @@ function coDetail(c){
  var sb=$('sb'); sb.innerHTML='<div class="load">…</div>';
  post({act:'bd',k:c.key},function(r){
   if(!r||!r.ok){ sb.innerHTML='<div class="empty">'+esc((r&&r.msg)||t('oNet'))+'</div>'; return }
-  var h='<div class="bigdebt" style="margin:0 0 12px;padding:16px"><small>'+(ru?'Остаток долга':'Qolgan qarz')+'</small><div style="font-size:26px">'+fmt(r.bal)+'</div></div>';
+  var h='<div class="bigdebt" style="margin:0 0 12px;padding:16px"><small>'+(r.bal<0?(ru?'Аванс (мы должны клиенту)':'Avans (biz mijozdan qarzmiz)'):(ru?'Остаток долга':'Qolgan qarz'))+'</small><div style="font-size:26px">'+(r.bal<0?'+':'')+fmt(Math.abs(r.bal))+'</div></div>';
   h+='<div class="sm" style="text-align:center;color:var(--muted);margin:0 0 12px">'+(ru?'Всего в долг: ':'Jami qarz: ')+fmt(r.debt)+' · '+(ru?'оплачено: ':'to‘langan: ')+fmt(r.paid)+'</div>';
-  if(r.bal>0&&r.canPay){
+  if(r.canPay){
    var IS='width:100%;box-sizing:border-box;padding:12px;font-size:16px;border:1px solid rgba(128,128,128,.4);border-radius:10px;background:var(--surface);color:inherit;margin:6px 0';
    h+='<div class="so"><div class="h"><b>'+(ru?'Принять оплату':'To‘lovni qabul qilish')+'</b></div><input id="pa" inputmode="numeric" autocomplete="off" placeholder="'+(ru?'Сумма':'Summa')+'" style="'+IS+'"><input id="pn" autocomplete="off" placeholder="'+(ru?'Комментарий (необязательно)':'Izoh (ixtiyoriy)')+'" style="'+IS+'"><div class="bt"><button id="pf">'+(ru?'Весь остаток':'To‘liq qoldiq')+'</button><button id="pb">💵 '+(ru?'Принять':'Qabul qilish')+'</button></div></div>';
   }
@@ -383,12 +386,11 @@ function coDetail(c){
   (r.orders||[]).forEach(function(o){ h+='<div class="so"><div class="h"><b>'+esc(o.name)+'</b><span class="id">№'+esc(o.id)+'</span></div><div class="sm" style="color:var(--muted);font-size:12.5px;margin-top:3px">'+esc(o.qty)+' '+t('pcs')+' · '+esc(o.date)+'</div><div class="cu">👤 '+esc(o.by)+'</div><div class="cu" style="font-weight:700">💵 '+fmt(o.amount)+'</div></div>' });
   sb.innerHTML=h;
   var pf=$('pf'), pb=$('pb');
-  if(pf) pf.onclick=function(){ $('pa').value=String(r.bal) };
+  if(pf) pf.onclick=function(){ $('pa').value=String(Math.max(r.bal,0)) };
   if(pb) pb.onclick=function(){
    var amt=Math.round(Number(String($('pa').value||'').replace(/[\s ]/g,'').replace(',','.')));
    if(!(amt>0)){ sAlert(ru?'Введите сумму':'Summani kiriting'); return }
-   if(amt>r.bal){ sAlert((ru?'Сумма больше долга: ':'Summa qarzdan ko‘p: ')+fmt(r.bal)); return }
-   var msg=(ru?'Принять оплату ':'To‘lovni qabul qilasizmi: ')+fmt(amt)+' — '+r.label+'?';
+   var msg=(ru?'Принять оплату ':'To‘lovni qabul qilasizmi: ')+fmt(amt)+' — '+r.label+'?'+(amt>Math.max(r.bal,0)?'\n'+(ru?'⚠️ Больше долга — разница станет авансом: ':'⚠️ Qarzdan ko‘p — farqi avans bo‘ladi: ')+fmt(amt-Math.max(r.bal,0)):'');
    var go=function(){
     pb.disabled=true;
     post({act:'bp',k:r.key,a:amt,n:$('pn').value||''},function(x){
