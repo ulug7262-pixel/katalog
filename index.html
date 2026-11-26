@@ -76,6 +76,9 @@ h2{font:700 16px var(--f-head);margin:18px 0 10px}
 .cta{width:100%;border:0;background:var(--accent);color:var(--accent-ink);border-radius:13px;padding:14px;font:600 16px var(--f-body);margin-top:14px}
 .cta[disabled]{opacity:.5}
 .note{color:var(--muted);font-size:12.5px;margin-top:10px}
+.desc{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);color:var(--ink);font-size:14px;line-height:1.5;white-space:pre-line;overflow-wrap:anywhere}
+.desc.cl{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.more{border:0;background:none;color:var(--muted);font-weight:600;font-size:13px;padding:6px 0 0}
 .zoom{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:40;display:none;place-items:center}
 .zoom.on{display:grid}
 .zoom img{max-width:96vw;max-height:88vh;object-fit:contain}
@@ -103,11 +106,11 @@ var T={
  uz:{search:'Tovar qidirish',sale:'Chegirmalar',news:'Yangi kelgan mahsulotlar',all:'Statuetkalar',cnt:'ta tovar',disc:'Tovarlar',none:'Hech narsa topilmadi',back:'Orqaga',
      sum:'so‘m',soldout:'Tugagan',gone:'Hozircha qolmagan',inst:'Omborda',last:'Oxirgi',pcs:'ta',avail:'Mavjud',plain:'Gravirovkasiz',engr:'Gravirovka bilan',
      order:'Buyurtma berish',note:'Tugma sizni bot ichidagi buyurtma jarayoniga olib boradi: miqdor, gravirovka matni, bron.',video:'VIDEO',vtap:'Bosing, video o‘ynaydi',
-     hi:'Xush kelibsiz',contact:'Menejer bilan bog‘lanish',contactSub:'Savol bormi? Telegramda yozing',close:'Yopish uchun bosing',err:'Katalogni yuklab bo‘lmadi',retry:'Qayta urinish',nw:'Yangi',min:'Minimal buyurtma'},
+     hi:'Xush kelibsiz',contact:'Menejer bilan bog‘lanish',contactSub:'Savol bormi? Telegramda yozing',close:'Yopish uchun bosing',err:'Katalogni yuklab bo‘lmadi',retry:'Qayta urinish',nw:'Yangi',min:'Minimal buyurtma',more:'Batafsil',less:'Yig‘ish'},
  ru:{search:'Поиск товара',sale:'Скидки',news:'Новые поступления',all:'Статуэтки',cnt:'шт.',disc:'Товары',none:'Ничего не найдено',back:'Назад',
      sum:'сум',soldout:'Нет в наличии',gone:'Сейчас нет в наличии',inst:'На складе',last:'Последние',pcs:'шт.',avail:'В наличии',plain:'Без гравировки',engr:'С гравировкой',
      order:'Заказать',note:'Кнопка откроет оформление заказа в боте: количество, текст гравировки, бронь.',video:'ВИДЕО',vtap:'Нажмите, чтобы смотреть',
-     hi:'Добро пожаловать',contact:'Связаться с менеджером',contactSub:'Есть вопрос? Напишите в Telegram',close:'Нажмите, чтобы закрыть',err:'Не удалось загрузить каталог',retry:'Повторить',nw:'Новинка',min:'Мин. заказ'}
+     hi:'Добро пожаловать',contact:'Связаться с менеджером',contactSub:'Есть вопрос? Напишите в Telegram',close:'Нажмите, чтобы закрыть',err:'Не удалось загрузить каталог',retry:'Повторить',nw:'Новинка',min:'Мин. заказ',more:'Подробнее',less:'Свернуть'}
 };
 var API='https://script.google.com/macros/s/AKfycbweHcoeu85aKccylwbtPehd_NENjnoN4nghM24F-hFM6qidgSV78EoRkx7w7hLfqebG4A/exec';
 var RAND=[], USERNAME='';
@@ -202,7 +205,7 @@ function render(){
 
 function openSheet(id){
  var x=DATA.products.filter(function(p){return p.id===id})[0]; if(!x) return;
- var both=!!(x.price&&x.priceE), engr=!x.price;
+ var both=!!(x.price&&x.priceE), engr=!x.price, openDesc=false;
  var slides=x.photos.map(function(u){return {t:'img',u:u}}); if(x.video) slides.push({t:'vid'});
  function gal(){
   if(!slides.length) return '<div class="gal"><div class="slide" style="cursor:default"><span class="ph" style="width:80px;opacity:.35">'+svg('ph',80)+'</span></div></div>';
@@ -218,8 +221,10 @@ function openSheet(id){
    (both?'<div class="seg"><button aria-pressed="'+(!engr)+'" id="s0">'+t('plain')+'</button><button aria-pressed="'+engr+'" id="s1">'+t('engr')+'</button></div>':'<div style="height:12px"></div>')+
    '<div class="big">'+fmt(price)+'</div>'+(old?'<div class="old" style="margin:0">'+fmt(old)+'</div>':'')+
    (x.min>1?'<div class="note">'+t('min')+': '+x.min+' '+t('pcs')+'</div>':'')+
+   (x.desc?'<div class="desc'+(x.desc.length>140&&!openDesc?' cl':'')+'" id="ds">'+esc(x.desc)+'</div>'+(x.desc.length>140?'<button class="more" id="mr">'+(openDesc?t('less'):t('more'))+'</button>':''):'')+
    '<button class="cta" id="go"'+(out?' disabled':'')+'>'+(out?t('soldout'):t('order'))+'</button>';
   $('cl').onclick=close;
+  var mr=$('mr'); if(mr) mr.onclick=function(){openDesc=!openDesc;var sc=$('sheet').scrollTop;paint();$('sheet').scrollTop=sc};
   if(both){$('s0').onclick=function(){engr=false;paint()};$('s1').onclick=function(){engr=true;paint()}}
   $('go').onclick=function(){ if(out) return; var url='https://t.me/'+DATA.bot+'?start='+encodeURIComponent(x.id);
    try{ if(tg&&tg.openTelegramLink){ tg.openTelegramLink(url); tg.close&&setTimeout(function(){tg.close()},300) } else window.open(url,'_blank') }catch(e){ window.open(url,'_blank') } };
