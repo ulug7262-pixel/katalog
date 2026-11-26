@@ -111,23 +111,35 @@ h2{font:700 16px var(--f-head);margin:18px 0 10px}
 .ord .sec{background:none;border:0;color:var(--muted);width:100%;padding:12px;font-weight:600}
 .ord .fi{width:100%;box-sizing:border-box;border:2px solid transparent;background:var(--chip);border-radius:12px;padding:13px 14px;font:600 16px var(--f-head);color:inherit;outline:0}
 .ord .fi:focus{border-color:var(--accent)}
+.mine{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.mine .folder{margin:0}.mine .folder.one{grid-column:1/-1}
+.folder.debt{background:var(--sale);color:#fff}.folder.debt .ic{background:rgba(255,255,255,.2)}.folder.debt span.n{color:rgba(255,255,255,.92);font:700 15px var(--f-head)}
+.ord1{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:13px 14px;margin:0 0 10px}
+.ord1 .r1{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.ord1 b{font:600 15px var(--f-head);overflow-wrap:anywhere}
+.ord1 .sm{color:var(--muted);font-size:12.5px;margin-top:3px}
+.ord1 .sum{font:700 15px var(--f-head);white-space:nowrap}
+.chip{display:inline-block;font:600 11.5px var(--f-head);padding:3px 9px;border-radius:99px;background:var(--chip);margin-top:8px}
+.chip.book{background:#F4B93A;color:#2b1d00}.chip.debt{background:var(--sale);color:#fff}.chip.done{background:var(--accent);color:var(--accent-ink)}
+.bigdebt{background:var(--sale);color:#fff;border-radius:18px;padding:26px 20px;text-align:center;margin-top:14px}
+.bigdebt small{display:block;opacity:.9;font-size:14px}.bigdebt div{font:700 34px var(--f-head);margin-top:8px;overflow-wrap:anywhere}
 </style></head><body>
 <div class="app" id="app"><div class="load">…</div></div>
 <div class="scrim" id="scrim"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div class="zoom" id="zoom"><img id="zimg" alt=""><p id="zp"></p></div>
 <script>
 var T={
- uz:{search:'Tovar qidirish',sale:'Chegirmalar',news:'Yangi kelgan mahsulotlar',all:'Statuetkalar',cnt:'ta tovar',disc:'Tovarlar',none:'Hech narsa topilmadi',back:'Orqaga',
+ uz:{myo:'Mening buyurtmalarim',debt:'Qarzdorlik',tdebt:'Umumiy qarzdorlik',noo:'Hozircha buyurtmalar yo‘q',sNew:'Qabul qilindi',sDone:'Bajarildi',sBook:'Bron',sDebt:'Qarz',search:'Tovar qidirish',sale:'Chegirmalar',news:'Yangi kelgan mahsulotlar',all:'Statuetkalar',cnt:'ta tovar',disc:'Tovarlar',none:'Hech narsa topilmadi',back:'Orqaga',
      sum:'so‘m',soldout:'Tugagan',gone:'Hozircha qolmagan',inst:'Omborda',last:'Oxirgi',pcs:'ta',avail:'Mavjud',plain:'Gravirovkasiz',engr:'Gravirovka bilan',
      order:'Buyurtma berish',oQty:'Miqdori',oEngr:'Gravirovka',oTot:'Jami',oChk:'Buyurtmani tekshiring',oConf:'Tasdiqlash',oEdit:'O‘zgartirish',oBack:'Katalogga qaytish',oBot:'Botni ochish',oWait:'Yuborilmoqda…',oProd:'Tovar',oBookNote:'⏳ Bron muddati: {u} gacha (maksimum 48 soat). Shu vaqt ichida tasdiqlanmasa, bron avtomatik bekor bo‘ladi.',oReg:'Buyurtma berish uchun botda bir marta ro‘yxatdan o‘ting.',oNet:'Aloqa xatosi. Qayta urinib ko‘ring.',oNext:'Davom etish',note2:'',note:'Tugma sizni bot ichidagi buyurtma jarayoniga olib boradi: miqdor, gravirovka matni, bron.',video:'VIDEO',vtap:'Bosing, video o‘ynaydi',
      hi:'Xush kelibsiz',contact:'Menejer bilan bog‘lanish',contactSub:'Savol bormi? Telegramda yozing',close:'Yopish uchun bosing',err:'Katalogni yuklab bo‘lmadi',retry:'Qayta urinish',nw:'Yangi',min:'Minimal buyurtma',more:'Batafsil',less:'Yig‘ish'},
- ru:{search:'Поиск товара',sale:'Скидки',news:'Новые поступления',all:'Статуэтки',cnt:'шт.',disc:'Товары',none:'Ничего не найдено',back:'Назад',
+ ru:{myo:'Мои заказы',debt:'Задолженность',tdebt:'Общая задолженность',noo:'Заказов пока нет',sNew:'Принят',sDone:'Выполнен',sBook:'Бронь',sDebt:'В долг',search:'Поиск товара',sale:'Скидки',news:'Новые поступления',all:'Статуэтки',cnt:'шт.',disc:'Товары',none:'Ничего не найдено',back:'Назад',
      sum:'сум',soldout:'Нет в наличии',gone:'Сейчас нет в наличии',inst:'На складе',last:'Последние',pcs:'шт.',avail:'В наличии',plain:'Без гравировки',engr:'С гравировкой',
      order:'Заказать',oQty:'Количество',oEngr:'Гравировка',oTot:'Итого',oChk:'Проверьте заказ',oConf:'Подтвердить',oEdit:'Изменить',oBack:'Вернуться в каталог',oBot:'Открыть бота',oWait:'Отправка…',oProd:'Товар',oBookNote:'⏳ Бронь действует до {u} (максимум 48 часов). Если за это время заказ не подтвердят, бронь снимется автоматически.',oReg:'Чтобы заказать, один раз зарегистрируйтесь в боте.',oNet:'Ошибка связи. Попробуйте ещё раз.',oNext:'Далее',note2:'',note:'Кнопка откроет оформление заказа в боте: количество, текст гравировки, бронь.',video:'ВИДЕО',vtap:'Нажмите, чтобы смотреть',
      hi:'Добро пожаловать',contact:'Связаться с менеджером',contactSub:'Есть вопрос? Напишите в Telegram',close:'Нажмите, чтобы закрыть',err:'Не удалось загрузить каталог',retry:'Повторить',nw:'Новинка',min:'Мин. заказ',more:'Подробнее',less:'Свернуть'}
 };
 var API='https://script.google.com/macros/s/AKfycbweHcoeu85aKccylwbtPehd_NENjnoN4nghM24F-hFM6qidgSV78EoRkx7w7hLfqebG4A/exec';
-var RAND=[], USERNAME='';
+var RAND=[], USERNAME='', ME=null;
 function shuffle10(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a.slice(0,10)}
 var lang='uz', tg=window.Telegram&&window.Telegram.WebApp, DATA=null, state={folder:null,q:''};
 try{ var sv=localStorage.getItem('lp_lang'); if(sv) lang=sv; else if(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user&&tg.initDataUnsafe.user.language_code==='ru') lang='ru' }catch(e){}
@@ -150,7 +162,7 @@ var svg=function(k,s){return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 64 
 
 function load(){
  $('app').innerHTML='<div class="load">…</div>';
- var ok=function(d){DATA=d;RAND=shuffle10(d.products);render()};
+ var ok=function(d){DATA=d;RAND=shuffle10(d.products);loadMe();render()};
  if(window.google&&google.script&&google.script.run){ google.script.run.withSuccessHandler(ok).withFailureHandler(fail).getCatalog(); return }
  fetch(API+'?api=1').then(function(r){return r.json()}).then(ok).catch(fail);
 }
@@ -190,8 +202,31 @@ function card(x){
   '<div class="stock'+(low?' low':'')+'">'+(out?t('gone'):low?t('last')+' '+x.qty+' '+t('pcs'):t('avail')+': '+x.qty+' '+t('pcs'))+'</div></div></button>';
 }
 function langBtn(){ return '<button class="lang" id="lg">'+(lang==='uz'?'RU':'UZ')+'</button>' }
+function loadMe(){
+ var init=(tg&&tg.initData)||''; if(!init) return;
+ api({act:'my',d:init},function(r){ if(r&&r.ok){ ME=r; if(!state.folder&&!state.view) render() } });
+}
+function engLbl(e){ if(lang==='ru') return e; return {'Без гравировки':'Gravirovkasiz','С гравировкой':'Gravirovka bilan','⏳ Бронь':'⏳ Bron','Бронь':'⏳ Bron'}[e]||e }
+function renderView(){
+ var h='<div class="top"><button class="back" id="back" aria-label="'+t('back')+'">←</button><div class="grow"><h1>'+t(state.view==='debt'?'debt':'myo')+'</h1></div>'+langBtn()+'</div>';
+ if(state.view==='debt'){
+  h+='<div class="bigdebt"><small>'+t('tdebt')+'</small><div>'+fmt(ME&&ME.debt||0)+'</div></div>';
+ } else {
+  var L=(ME&&ME.orders)||[];
+  if(!L.length) h+='<div class="empty">'+t('noo')+'</div>';
+  L.forEach(function(o){
+   var st={book:t('sBook'),debt:t('sDebt'),done:t('sDone'),'new':t('sNew')}[o.st]||t('sNew');
+   h+='<div class="ord1"><div class="r1"><div><b>'+esc(o.name)+'</b><div class="sm">'+esc(o.qty)+' '+t('pcs')+(o.engr?' · '+esc(engLbl(o.engr)):'')+' · '+esc(o.date)+'</div></div><div class="sum">'+(o.sum?fmt(o.sum):'')+'</div></div><span class="chip '+esc(o.st)+'">'+st+'</span></div>';
+  });
+ }
+ $('app').innerHTML=h; window.scrollTo(0,0);
+ $('back').onclick=function(){ state.view=null; render() };
+ $('lg').onclick=function(){ lang=lang==='uz'?'ru':'uz'; try{localStorage.setItem('lp_lang',lang)}catch(e){}; render() };
+}
+
 function render(){
  if(!DATA) return;
+ if(state.view){ renderView(); return }
  var h='', P=DATA.products, q=state.q.trim().toLowerCase();
  if(!state.folder&&!q){
   h+='<div class="top"><div class="logo2"><img src="data:image/jpeg;base64,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" width="44" height="44" alt="Laser Point" style="border-radius:12px;display:block"></div><div class="grow"><h1>Laser Point</h1><small class="tel"><a href="tel:+998999898882">+998 99 989 88 82</a><a href="tel:+998339988882">+998 33 998 88 82</a></small></div>'+langBtn()+'</div>';
@@ -199,6 +234,9 @@ function render(){
   h+='<input class="search" id="q" placeholder="'+t('search')+'" aria-label="'+t('search')+'">';
   h+='<div class="folders">'+folderList().map(function(f){return '<button class="folder'+(f.sale?' sale':'')+'" data-f="'+esc(f.id)+'"><span class="ic">'+svg(f.ic,24)+'</span><div><b>'+esc(f.name)+'</b><span class="n">'+f.n+' '+t('cnt')+'</span></div></button>'}).join('')+'</div>';
   h+='<a class="contact" href="https://t.me/laser_point_uz" id="ct"><span class="ci"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></span><span><b>'+t('contact')+'</b><small>'+t('contactSub')+' · @laser_point_uz</small></span></a>';
+  var nb=ME&&ME.orders&&ME.orders.length, db=ME&&ME.debt>0;
+  if(ME){ h+='<div class="mine"><button class="folder'+(db?'':' one')+'" data-v="orders"><span class="ic">'+svg('folder',24)+'</span><div><b>'+t('myo')+'</b><span class="n">'+(nb||0)+' '+(lang==='ru'?'шт.':'ta')+'</span></div></button>'+
+   (db?'<button class="folder debt" data-v="debt"><span class="ic">'+svg('tag',24)+'</span><div><b>'+t('debt')+'</b><span class="n">'+fmt(ME.debt)+'</span></div></button>':'')+'</div>'; }
   h+='<h2>'+t('disc')+'</h2><div class="grid">'+RAND.map(card).join('')+'</div>';
  } else {
   var fo=folderList().filter(function(f){return f.id===state.folder})[0];
@@ -212,6 +250,7 @@ function render(){
  var qi=$('q'); if(qi) qi.addEventListener('input',function(e){var v=e.target.value;state.q=v;if(v&&!state.folder)state.folder='@all';if(!v&&state.folder==='@all'&&!state._f)state.folder=null;render();var n=$('q');n.focus();n.setSelectionRange(v.length,v.length)});
  var ct=$('ct'); if(ct) ct.onclick=function(e){ try{ if(tg&&tg.openTelegramLink){ e.preventDefault(); tg.openTelegramLink('https://t.me/laser_point_uz') } }catch(err){} };
  var b=$('back'); if(b) b.onclick=function(){state={folder:null,q:''};render()};
+ Array.prototype.forEach.call(document.querySelectorAll('[data-v]'),function(el){el.onclick=function(){state.view=el.dataset.v;render()}});
  var lg=$('lg'); if(lg) lg.onclick=function(){lang=lang==='uz'?'ru':'uz';try{localStorage.setItem('lp_lang',lang)}catch(e){};render()};
  Array.prototype.forEach.call(document.querySelectorAll('[data-f]'),function(el){el.onclick=function(){state={folder:el.dataset.f,q:'',_f:1};render();window.scrollTo(0,0)}});
  Array.prototype.forEach.call(document.querySelectorAll('[data-id]'),function(el){el.onclick=function(){openSheet(el.dataset.id)}});
