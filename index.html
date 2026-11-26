@@ -280,10 +280,12 @@ function wiz(o,body){ sTop((lang==='ru'?'Заказ №':'Buyurtma №')+o.id,fu
 function sAlert(mm){ try{ tg.showAlert(mm) }catch(e){ alert(mm) } }
 function photoStep(o,kind,next){
  var ru=lang==='ru';
- wiz(o,'<h4 style="font:700 16px var(--f-head);margin:6px 0">'+(kind==='work'?(ru?'📷 Фото выполненной работы':'📷 Bajarilgan ish rasmi'):(ru?'🧾 Фото чека':'🧾 Chek rasmi'))+'</h4><input type="file" id="pf" accept="image/*" capture="environment" style="display:none"><button class="ph1" id="pb">'+(ru?'Снять фото / выбрать':'Rasmga olish / tanlash')+'</button><div class="msg" id="er" style="display:none;background:var(--chip);border-radius:12px;padding:12px;margin:8px 0"></div><button class="cta" id="pn" disabled>'+t('oConf')+'</button>');
+ wiz(o,'<h4 style="font:700 16px var(--f-head);margin:6px 0">'+(kind==='work'?(ru?'📷 Фото выполненной работы':'📷 Bajarilgan ish rasmi'):(ru?'🧾 Фото чека':'🧾 Chek rasmi'))+'</h4><input type="file" id="pf" accept="image/*" capture="environment" style="display:none"><input type="file" id="pg" accept="image/*" style="display:none"><button class="ph1" id="pb">'+(ru?'📷 Снять фото':'📷 Kamera')+'</button><button class="opt" id="pc" style="margin-top:8px;text-align:center">'+(ru?'🖼 Выбрать из галереи':'🖼 Galereyadan tanlash')+'</button><div class="msg" id="er" style="display:none;background:var(--chip);border-radius:12px;padding:12px;margin:8px 0"></div><button class="cta" id="pn" disabled>'+t('oConf')+'</button>');
  var data=null;
  $('pb').onclick=function(){ $('pf').click() };
- $('pf').onchange=function(){ var f=this.files[0]; if(!f) return; shrink(f,function(u){ data=u; $('pb').innerHTML='<img src="'+u+'">'; $('pn').disabled=false }) };
+ $('pc').onclick=function(){ $('pg').click() };
+ var got=function(){ var f=this.files[0]; if(!f) return; shrink(f,function(u){ data=u; $('pb').innerHTML='<img src="'+u+'">'; $('pc').style.display='none'; $('pn').disabled=false }) };
+ $('pf').onchange=got; $('pg').onchange=got;
  $('pn').onclick=function(){ var b=$('pn'); b.disabled=true; b.textContent=t('oWait'); post({act:kind==='work'?'sw':'sk',id:o.id,row:o.row,img:data},function(r){ if(r.ok) next(); else { b.disabled=false; b.textContent=t('oConf'); var e=$('er'); e.style.display='block'; e.textContent=r.msg||t('oNet') } }) };
 }
 function shrink(file,cb){ var rd=new FileReader(); rd.onload=function(){ var im=new Image(); im.onload=function(){ var m=1280,k=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement('canvas'); c.width=im.width*k; c.height=im.height*k; c.getContext('2d').drawImage(im,0,0,c.width,c.height); cb(c.toDataURL('image/jpeg',.82)) }; im.src=rd.result }; rd.readAsDataURL(file) }
