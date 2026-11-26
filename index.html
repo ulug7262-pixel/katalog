@@ -247,6 +247,14 @@ function renderStaff(){
  var sb=$('sb'); sb.innerHTML='<div class="load">…</div>';
  sapi('sl',{},function(r){ if(!r.ok){ sb.innerHTML='<div class="empty">'+esc(r.msg||t('oNet'))+'</div>'; return } SF.list=r; drawStaff() });
 }
+function contactInfo(o){ var txt=String(o.cust||''), un='', ph='';
+ if(o.fw){ var m=txt.match(/@([A-Za-z0-9_]{4,})/); if(m) un=m[1]; var d=(String(o.phone||'')+' '+txt).match(/\+?\d[\d\s().-]{7,}\d/); if(d) ph=d[0].replace(/[^\d+]/g,'') }
+ else { un=o.tgu||''; ph=String(o.phone||'').replace(/[^\d+]/g,'') }
+ var dg=ph.replace(/\D/g,''), tgl=un?'https://t.me/'+un:(dg?'https://t.me/+'+dg:'');
+ return {tg:tgl,tel:ph.length>=7?ph:''} }
+var TGSVG='<svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M21.9 3.4 2.6 10.9c-1.3.5-1.3 1.3-.2 1.6l4.9 1.5 1.9 5.8c.2.6.1.9.8.9.5 0 .8-.2 1.1-.5l2.4-2.3 4.9 3.6c.9.5 1.5.2 1.8-.8l3.2-15.2c.3-1.3-.5-1.9-1.5-1.1zM8.4 13.2l9.8-6.2c.5-.3.9-.1.5.2l-8.1 7.3-.3 3.4z"/></svg>';
+function contactHtml(o){ var c=contactInfo(o); if(!c.tg&&!c.tel) return '';
+ return '<div class="cl">'+(c.tg?'<a class="tg" href="'+esc(c.tg)+'" data-tg="1">'+TGSVG+' Telegram</a>':'')+(c.tel?'<a href="tel:'+esc(c.tel)+'" data-tel="1">📞 '+esc(c.tel)+'</a>':'')+'</div>' }
 function tgLink(o){ if(o.tgu) return 'https://t.me/'+o.tgu; var d=String(o.phone||'').replace(/\D/g,''); return d?'https://t.me/+'+d:'https://t.me/' }
 function drawStaff(){
  var r=SF.list||{open:[],debt:[],total:0}, sb=$('sb');
@@ -259,9 +267,10 @@ function drawStaff(){
   if(SF.tab==='debt') bt='<button data-a="pay" data-i="'+i+'">'+(lang==='ru'?'💵 Принять оплату':'💵 To‘lovni qabul qilish')+'</button>';
   else if(o.book) bt='<button data-a="bk" data-i="'+i+'">'+(lang==='ru'?'✅ Подтвердить бронь':'✅ Bronni tasdiqlash')+'</button><button class="no" data-a="cx" data-i="'+i+'">'+(lang==='ru'?'❌ Снять':'❌ Olib tashlash')+'</button>';
   else bt='<button data-a="go" data-i="'+i+'">'+(lang==='ru'?'✅ Выбрать':'✅ Tanlash')+'</button><button class="no" data-a="cx" data-i="'+i+'">'+(lang==='ru'?'❌ Не забрал':'❌ Olib ketmadi')+'</button>';
-  h+='<div class="so">'+((SF.tab==='debt'?o.photo:o.pic)?'<img src="'+esc(SF.tab==='debt'?o.photo:o.pic)+'" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin-bottom:10px;display:block">':'')+'<div class="h"><b>'+esc(o.name)+'</b><span class="id">№'+esc(o.id)+'</span></div><div class="sm" style="color:var(--muted);font-size:12.5px;margin-top:3px">'+esc(o.qty)+' '+t('pcs')+' · '+esc(engLbl(o.engr||''))+' · '+esc(o.date)+'</div><div class="cu">👤 '+esc(o.cust)+'</div><div class="cl"><a class="tg" href="'+esc(tgLink(o))+'" data-tg="1"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M21.9 3.4 2.6 10.9c-1.3.5-1.3 1.3-.2 1.6l4.9 1.5 1.9 5.8c.2.6.1.9.8.9.5 0 .8-.2 1.1-.5l2.4-2.3 4.9 3.6c.9.5 1.5.2 1.8-.8l3.2-15.2c.3-1.3-.5-1.9-1.5-1.1zM8.4 13.2l9.8-6.2c.5-.3.9-.1.5.2l-8.1 7.3-.3 3.4z"/></svg> '+(o.tgu?'@'+esc(o.tgu):esc(o.phone))+'</a><a href="tel:'+esc(o.phone)+'">📞 '+esc(o.phone)+'</a></div>'+(SF.tab==='debt'?'<div class="cu" style="font-weight:700">💵 '+fmt(o.amount)+'</div>':'')+'<div class="bt">'+bt+'</div></div>';
+  h+='<div class="so">'+((SF.tab==='debt'?o.photo:o.pic)?'<img src="'+esc(SF.tab==='debt'?o.photo:o.pic)+'" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin-bottom:10px;display:block">':'')+'<div class="h"><b>'+esc(o.name)+'</b><span class="id">№'+esc(o.id)+'</span></div><div class="sm" style="color:var(--muted);font-size:12.5px;margin-top:3px">'+esc(o.qty)+' '+t('pcs')+' · '+esc(engLbl(o.engr||''))+' · '+esc(o.date)+'</div><div class="cu">👤 '+esc(o.cust)+'</div>'+contactHtml(o)+(SF.tab==='debt'?'<div class="cu" style="font-weight:700">💵 '+fmt(o.amount)+'</div>':'')+'<div class="bt">'+bt+'</div></div>';
  });
  sb.innerHTML=h;
+ Array.prototype.forEach.call(sb.querySelectorAll('[data-tel]'),function(a){ a.onclick=function(e){ e.preventDefault(); var h=a.getAttribute('href'); try{ window.location.href=h }catch(err){} } });
  Array.prototype.forEach.call(sb.querySelectorAll('[data-tg]'),function(a){ a.onclick=function(e){ try{ if(tg&&tg.openTelegramLink){ e.preventDefault(); tg.openTelegramLink(a.getAttribute('href')) } }catch(err){} } });
  $('t1').onclick=function(){SF.tab='open';drawStaff()}; $('t2').onclick=function(){SF.tab='debt';drawStaff()};
  Array.prototype.forEach.call(sb.querySelectorAll('[data-a]'),function(b){ b.onclick=function(){ staffAct(b.dataset.a,L[+b.dataset.i]) } });
@@ -407,6 +416,11 @@ function ordFlow(x,engr0,back){
   var priceOf=function(g){ return g==='yes'?(x.priceE||x.price):(x.price||x.priceE) };
   var gname=function(g){ return c.opt[g] };
   var nonce=String(Date.now())+Math.random().toString(36).slice(2,8);
+  var who='';
+  function step0(){
+   box('<h4>'+(lang==='ru'?'Для кого заказ?':'Kim uchun buyurtma qilyapsiz?')+'</h4><textarea id="wh" rows="3" placeholder="'+(lang==='ru'?'Имя и телефон одним сообщением':'Ism va telefon raqamini yozing')+'" style="width:100%;box-sizing:border-box;border-radius:12px;padding:12px;font:inherit;background:var(--surface);color:var(--ink);border:1px solid var(--line)">'+esc(who)+'</textarea><div class="msg" id="er" style="display:none"></div><button class="cta" id="nx">'+t('oNext')+'</button><button class="sec" id="bk">'+t('oBack')+'</button>');
+   $('bk').onclick=back;
+   $('nx').onclick=function(){ var v=$('wh').value.trim(); if(!v){ var er=$('er'); er.style.display='block'; er.textContent=lang==='ru'?'Напишите, для кого заказ':'Kim uchun ekanini yozing'; return } who=v; step1() } }
   function step1(){
    box('<h4>'+t('oQty')+'</h4><div class="row"><div class="stp"><button id="mn">−</button><input id="qi" inputmode="decimal" value="'+qty+'"><button id="pl">+</button></div><span style="color:var(--muted)">'+t('inst')+': '+c.ostatok+(c.min>1?' · '+t('min')+': '+c.min:'')+'</span></div>'+
     '<h4>'+t('oEngr')+'</h4><div class="q">'+esc(c.q)+'</div>'+
@@ -429,18 +443,18 @@ function ordFlow(x,engr0,back){
   }
   function step2(){
    var tot=priceOf(g)*qty;
-   box('<h4>'+t('oChk')+'</h4><div class="sum"><div>'+t('oProd')+': <b>'+esc(x.name)+'</b></div><div>'+t('oQty')+': <b>'+qty+' '+t('pcs')+'</b></div><div>'+t('oEngr')+': <b>'+esc(gname(g))+'</b></div><div>'+t('oTot')+': <b>'+fmt(tot)+'</b></div></div>'+
+   box('<h4>'+t('oChk')+'</h4><div class="sum">'+(c.staff?'<div>👤 <b>'+esc(who)+'</b></div>':'')+'<div>'+t('oProd')+': <b>'+esc(x.name)+'</b></div><div>'+t('oQty')+': <b>'+qty+' '+t('pcs')+'</b></div><div>'+t('oEngr')+': <b>'+esc(gname(g))+'</b></div><div>'+t('oTot')+': <b>'+fmt(tot)+'</b></div></div>'+
     '<div class="msg" id="er" style="display:none"></div><button class="cta" id="ok">'+t('oConf')+'</button><button class="sec" id="ed">'+t('oEdit')+'</button>');
    $('ed').onclick=step1;
    $('ok').onclick=function(){ var b=$('ok'); if(b.disabled) return; b.disabled=true; b.textContent=t('oWait');
-    api({act:'ord',d:init,id:x.id,q:qty,g:g,n:nonce},function(r){
+    api({act:'ord',d:init,id:x.id,q:qty,g:g,n:nonce,w:who},function(r){
      if(r.ok&&r.done){ try{ if(tg&&tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success') }catch(e){}
       box('<div class="msg" style="font-weight:600">✅ '+esc(r.text)+'</div>'+(r.book?'<div class="msg">'+esc(t('oBookNote').replace('{u}',r.until))+'</div>':'')+'<button class="cta" id="fin">'+t('oBack')+'</button>');
       $('fin').onclick=function(){ $('scrim').classList.remove('on'); sh.innerHTML=''; load() }; return }
      if(r.code==='qty'||r.code==='net'||r.code==='err'){ b.disabled=false; b.textContent=t('oConf'); var er=$('er'); er.style.display='block'; er.textContent=r.msg||t('oNet'); return }
      fail(r) }) };
   }
-  step1();
+  if(c.staff) step0(); else step1();
  });
 }
 $('zoom').onclick=function(){ $('zoom').classList.remove('on') };
