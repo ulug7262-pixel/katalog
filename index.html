@@ -222,6 +222,7 @@ function engChip(o){ var e=String(o.engr||'').trim(); if(!e) return ''; var y=e.
 function engLbl(e){ if(lang==='ru') return e; return {'Без гравировки':'Gravirovkasiz','С гравировкой':'Gravirovka bilan','⏳ Бронь':'⏳ Bron','Бронь':'⏳ Bron'}[e]||e }
 function renderView(){
  if(state.view==='staff'){ renderStaff(); return }
+ if(state.view==='stats'){ renderStats(); return }
  var h='<div class="top"><button class="back" id="back" aria-label="'+t('back')+'">←</button><div class="grow"><h1>'+t(state.view==='debt'?'debt':'myo')+'</h1></div>'+langBtn()+'</div>';
  if(state.view==='debt'){
   h+='<div class="bigdebt"><small>'+t('tdebt')+'</small><div>'+fmt(ME&&ME.debt||0)+'</div></div>';
@@ -401,6 +402,95 @@ function coDetail(c){
   };
  });
 }
+
+/* ===== Statistika (admin) ===== */
+var ST={d:null,sec:null,y:null,m:null};
+var MON_UZ=['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
+var MON_RU=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+function stMon(m){ return (lang==='ru'?MON_RU:MON_UZ)[m-1] }
+function stTop(title,back){
+ sTop(title,back);
+ $('lg').onclick=function(){ lang=lang==='uz'?'ru':'uz'; try{localStorage.setItem('lp_lang',lang)}catch(e){}; stDraw() };
+}
+var ST_ROW='display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border-radius:12px;box-shadow:var(--shadow);margin-bottom:8px';
+function stRow(left,sub,right){ return '<div style="'+ST_ROW+'"><div style="min-width:0"><b style="overflow-wrap:anywhere">'+left+'</b>'+(sub?'<div class="sm" style="color:var(--muted)">'+sub+'</div>':'')+'</div><b style="white-space:nowrap">'+right+'</b></div>' }
+function stFolder(attr,ic,title,sub){ return '<button class="folder stf" '+attr+' style="width:100%;margin-bottom:10px"><span class="ic">'+ic+'</span><div><b>'+title+'</b><span class="n">'+sub+'</span></div></button>' }
+function renderStats(){
+ ST.sec=null; ST.y=null; ST.m=null;
+ stTop(lang==='ru'?'Статистика':'Statistika',function(){ state.view=null; render() });
+ var sb=$('sb'); sb.innerHTML='<div class="load">…</div>';
+ post({act:'st'},function(r){
+  if(!r||!r.ok){ sb.innerHTML='<div class="empty">'+esc((r&&r.msg)||t('oNet'))+'</div>'; return }
+  ST.d=r; stDraw();
+ });
+}
+function stDraw(){
+ if(!ST.d) return;
+ if(!ST.sec) stHome();
+ else if(ST.y===null) stYears();
+ else if(ST.sec==='profit') stProfit();
+ else if(ST.m===null) stPeriods();
+ else stDetail();
+}
+function stHome(){
+ var ru=lang==='ru';
+ stTop(ru?'Статистика':'Statistika',function(){ state.view=null; render() });
+ $('sb').innerHTML='<div class="mine" style="display:block">'
+  +stFolder('data-s="cust"','🏆',ru?'Топ клиенты':'Top mijozlar',ru?'по компаниям · по месяцам и годам':'kompaniyalar bo‘yicha · oy va yil')
+  +stFolder('data-s="profit"','💰',ru?'Прибыль':'Foyda',ru?'по месяцам и за год':'oyma-oy va yillik')
+  +stFolder('data-s="prod"','📦',ru?'Топ товары':'Eng ko‘p sotilgan tovarlar',ru?'топ-10 за месяц и за год':'oy va yil bo‘yicha top-10')
+  +'</div>';
+ Array.prototype.forEach.call(document.querySelectorAll('[data-s]'),function(el){ el.onclick=function(){ ST.sec=el.dataset.s; ST.y=null; ST.m=null; stDraw() } });
+}
+function stSecName(){ var ru=lang==='ru'; return ST.sec==='cust'?(ru?'Топ клиенты':'Top mijozlar'):ST.sec==='profit'?(ru?'Прибыль':'Foyda'):(ru?'Топ товары':'Eng ko‘p sotilgan tovarlar') }
+function stYears(){
+ var ru=lang==='ru', d=ST.d, ys=Object.keys(d.years).sort().reverse(), h='';
+ stTop(stSecName(),function(){ ST.sec=null; stDraw() });
+ ys.forEach(function(y){
+  var o=d.years[y].y, sub=ST.sec==='profit'?(ru?'Прибыль: ':'Foyda: ')+fmt(o.profit):o.orders+(ru?' заказов':' ta buyurtma');
+  h+=stFolder('data-y="'+y+'"','📅',y,sub);
+ });
+ $('sb').innerHTML='<div class="mine" style="display:block">'+h+'</div>';
+ Array.prototype.forEach.call(document.querySelectorAll('[data-y]'),function(el){ el.onclick=function(){ ST.y=Number(el.dataset.y); ST.m=null; stDraw() } });
+}
+function stMonths(y){ var ms=Object.keys(ST.d.years[y].m).map(Number); if(Number(y)===ST.d.cur[0]&&ms.indexOf(ST.d.cur[1])<0) ms.push(ST.d.cur[1]); return ms.sort(function(a,b){return b-a}) }
+function stProfit(){
+ var ru=lang==='ru', Y=ST.d.years[ST.y], o=Y.y, h='';
+ stTop(stSecName()+' · '+ST.y,function(){ ST.y=null; stDraw() });
+ h+='<div style="background:var(--accent);color:var(--accent-ink);border-radius:18px;padding:22px 18px;text-align:center;margin-bottom:12px"><small style="display:block;opacity:.85">'+(ru?'Прибыль за ':'Yillik foyda · ')+ST.y+'</small><div style="font:700 30px var(--f-head);margin-top:6px;overflow-wrap:anywhere">'+fmt(o.profit)+'</div></div>';
+ h+='<div class="sm" style="text-align:center;color:var(--muted);margin:0 0 14px">'+(ru?'Оборот: ':'Aylanma: ')+fmt(o.turn)+' · '+(ru?'заказов: ':'buyurtmalar: ')+o.orders+'</div>';
+ stMonths(ST.y).forEach(function(mo){
+  var b=Y.m[mo]||{profit:0,orders:0,turn:0};
+  h+=stRow(stMon(mo),b.orders+(ru?' заказов':' ta buyurtma'),fmt(b.profit));
+ });
+ $('sb').innerHTML=h;
+}
+function stPeriods(){
+ var ru=lang==='ru', Y=ST.d.years[ST.y], h='';
+ stTop(stSecName()+' · '+ST.y,function(){ ST.y=null; stDraw() });
+ h+=stFolder('data-m="0"','📅',(ru?'Весь ':'Butun yil · ')+ST.y,Y.y.orders+(ru?' заказов':' ta buyurtma'));
+ stMonths(ST.y).forEach(function(mo){ var b=Y.m[mo]; h+=stFolder('data-m="'+mo+'"','🗓',stMon(mo),(b?b.orders:0)+(ru?' заказов':' ta buyurtma')) });
+ $('sb').innerHTML='<div class="mine" style="display:block">'+h+'</div>';
+ Array.prototype.forEach.call(document.querySelectorAll('[data-m]'),function(el){ el.onclick=function(){ ST.m=Number(el.dataset.m); stDraw() } });
+}
+function stDetail(){
+ var ru=lang==='ru', d=ST.d, Y=d.years[ST.y], yearly=ST.m===0, b=yearly?Y.y:(Y.m[ST.m]||{cust:[],prod:[],orders:0,goods:0,profit:0});
+ var ttl=yearly?String(ST.y):stMon(ST.m)+' '+ST.y, h='', med=['🥇','🥈','🥉'];
+ stTop(stSecName()+' · '+ttl,function(){ ST.m=null; stDraw() });
+ if(ST.sec==='cust'){
+  var lst=b.cust.filter(function(c,i){ return yearly?i<3:(i<3||c.s>=d.min) });
+  if(!lst.length) h+='<div class="empty">'+(ru?'Пока нет данных':'Hozircha ma‘lumot yo‘q')+'</div>';
+  lst.forEach(function(c,i){ h+=stRow((i<3?med[i]:(i+1)+'.')+' '+esc(c.n),c.o+(ru?' заказов':' ta buyurtma'),fmt(c.s)) });
+  if(!yearly&&b.cust.length>3) h+='<div class="sm" style="color:var(--muted);text-align:center;margin-top:8px">'+(ru?'4–10 места — компании свыше ':'4–10-o‘rinlar — oyiga ')+fmt(d.min)+(ru?' за месяц':' dan oshganlar')+'</div>';
+ } else {
+  var pl=b.prod;
+  h+='<div class="sm" style="text-align:center;color:var(--muted);margin:0 0 12px">'+(ru?'Продано товара: ':'Sotilgan tovar: ')+b.goods+(ru?' шт.':' dona')+'</div>';
+  if(!pl.length) h+='<div class="empty">'+(ru?'Пока нет данных':'Hozircha ma‘lumot yo‘q')+'</div>';
+  pl.forEach(function(p,i){ h+=stRow((i<3?med[i]:(i+1)+'.')+' '+esc(p.n),p.o+(ru?' заказов · ':' ta buyurtma · ')+fmt(p.s),p.q+(ru?' шт.':' dona')) });
+ }
+ $('sb').innerHTML=h;
+}
+
 function staffAct(a,o){
  var ru=lang==='ru';
  if(a==='ed'){ editStep(o); return }
@@ -424,7 +514,7 @@ function render(){
   h+='<input class="search" id="q" placeholder="'+t('search')+'" aria-label="'+t('search')+'">';
   h+='<div class="folders">'+folderList().map(function(f){return '<button class="folder'+(f.sale?' sale':'')+'" data-f="'+esc(f.id)+'"><span class="ic">'+svg(f.ic,24)+'</span><div><b>'+esc(f.name)+'</b><span class="n">'+f.n+' '+t('cnt')+'</span></div></button>'}).join('')+'</div>';
   h+='<a class="contact" href="https://t.me/laser_point_uz" id="ct"><span class="ci"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></span><span><b>'+t('contact')+'</b><small>'+t('contactSub')+' · @laser_point_uz</small></span></a>';
-  if(ME&&ME.staff) h+='<div class="mine"><button class="folder stf" data-v="staff"><span class="ic">'+svg('trophy',24)+'</span><div><b>'+t('stf')+'</b><span class="n">'+t('op')+' · '+t('unp')+'</span></div></button><button class="folder stf" id="svcb"><span class="ic">'+svg('tag',24)+'</span><div><b>'+(lang==='ru'?'Заказать услугу':'Xizmat buyurtmasi')+'</b><span class="n">'+(lang==='ru'?'Гравировка · UF':'Gravirovka · UF')+'</span></div></button></div>';
+  if(ME&&ME.staff) h+='<div class="mine"><button class="folder stf" data-v="staff"><span class="ic">'+svg('trophy',24)+'</span><div><b>'+t('stf')+'</b><span class="n">'+t('op')+' · '+t('unp')+'</span></div></button><button class="folder stf" id="svcb"><span class="ic">'+svg('tag',24)+'</span><div><b>'+(lang==='ru'?'Заказать услугу':'Xizmat buyurtmasi')+'</b><span class="n">'+(lang==='ru'?'Гравировка · UF':'Gravirovka · UF')+'</span></div></button>'+(ME.adm?'<button class="folder stf" data-v="stats"><span class="ic">📊</span><div><b>'+(lang==='ru'?'Статистика':'Statistika')+'</b><span class="n">'+(lang==='ru'?'клиенты · прибыль · товары':'mijozlar · foyda · tovarlar')+'</span></div></button>':'')+'</div>';
   var nb=ME&&ME.orders&&ME.orders.length, db=ME&&ME.debt>0;
   if(ME){ h+='<div class="mine"><button class="folder'+(db?'':' one')+'" data-v="orders"><span class="ic">'+svg('folder',24)+'</span><div><b>'+t('myo')+'</b><span class="n">'+(nb||0)+' '+(lang==='ru'?'шт.':'ta')+'</span></div></button>'+
    (db?'<button class="folder debt" data-v="debt"><span class="ic">'+svg('tag',24)+'</span><div><b>'+t('debt')+'</b><span class="n">'+fmt(ME.debt)+'</span></div></button>':'')+'</div>'; }
