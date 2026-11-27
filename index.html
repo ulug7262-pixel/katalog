@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="uz"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Laser Point</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
@@ -201,7 +201,10 @@ h2{font:700 16px var(--f-head);margin:18px 0 10px}
 .sheet .shd.ph.sc .ttl{opacity:1}
 .pfoot{position:sticky;bottom:calc(-16px - env(safe-area-inset-bottom,0px));z-index:4;background:var(--surface);margin:14px -16px calc(-16px - env(safe-area-inset-bottom,0px));padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
 .pfoot .cta{margin-top:0}
-.scrim.solid{background:var(--bg,var(--surface))}
+.scrim.solid{background:var(--surface)}
+.scrim.solid .sheet{max-width:none;max-height:none;height:100%;border-radius:0}
+html,body{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+input,textarea,select{font-size:16px!important}
 .bkb{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .bkb button{border:0;border-radius:11px;padding:10px 6px;font:600 14px var(--f-head);background:var(--accent);color:var(--accent-ink);cursor:pointer}
 .bkb button.no{background:var(--chip);color:var(--sale)}
@@ -721,7 +724,7 @@ function bronFlow(o,act){ var sh=$('sheet'), ru=lang==='ru', init=(tg&&tg.initDa
  function close(){ $('scrim').classList.remove('on'); sh.innerHTML='' }
  var box=function(h,prev){ sh.innerHTML='<div class="shd">'+(prev?'<button class="back" id="pv" aria-label="'+t('back')+'">←</button>':'')+'<span class="grow"></span><button class="close" id="cl" aria-label="x">✕</button></div><div class="ord"><h3>'+esc(o.name)+'</h3>'+h+'</div>'; $('cl').onclick=close; if(prev) $('pv').onclick=prev; sh.scrollTop=0 };
  function fin(msg,upd){ try{ upd() }catch(e){} box('<div class="msg" style="font-weight:600">'+msg+'</div><button class="cta" id="fin">'+(ru?'Готово':'Tayyor')+'</button>'); $('fin').onclick=function(){ close(); if(state.view==='orders') renderView(); loadMe() } }
- $('scrim').classList.remove('solid'); $('scrim').classList.add('on'); $('scrim').onclick=function(e){ if(e.target===$('scrim')) close() };
+ $('scrim').classList.add('solid'); $('scrim').classList.add('on'); $('scrim').onclick=function(e){ if(e.target===$('scrim')) close() };
  if(!init){ box('<div class="msg">'+t('oReg')+'</div>'); return }
  if(act==='x'){ box('<div class="msg">'+(ru?'Отменить бронь? Товар вернётся на склад.':'Bronni bekor qilasizmi? Tovar omborga qaytadi.')+'</div><button class="cta" id="y" style="background:var(--sale);color:#fff">'+(ru?'Да, отменить':'Ha, bekor qilish')+'</button><button class="sec" id="n">'+(ru?'Нет':'Yo‘q')+'</button><div class="msg" id="er" style="display:none"></div>'); $('n').onclick=close; $('y').onclick=function(){ var b=$('y'); if(b.disabled) return; b.disabled=true; b.textContent=t('oWait'); api({act:'bx',d:init,row:o.row,id:o.id},function(r){ if(r&&r.ok){ fin('❌ '+(ru?'Бронь отменена, товар вернулся на склад.':'Bron bekor qilindi, tovar omborga qaytdi.'),function(){ if(ME&&ME.orders) ME.orders=ME.orders.filter(function(x){return String(x.id)!==String(o.id)}) }) } else { b.disabled=false; b.textContent=ru?'Да, отменить':'Ha, bekor qilish'; var er=$('er'); er.style.display='block'; er.textContent=(r&&r.msg)||t('oNet') } }) }; return }
  box('<div class="msg">'+t('oWait')+'</div>');
@@ -731,6 +734,8 @@ function bronFlow(o,act){ var sh=$('sheet'), ru=lang==='ru', init=(tg&&tg.initDa
    Array.prototype.forEach.call(sh.querySelectorAll('[data-g]'),function(b){ b.onclick=function(){ if(sh.querySelector('[data-g][disabled]')) return; Array.prototype.forEach.call(sh.querySelectorAll('[data-g]'),function(x){x.disabled=true}); b.textContent=t('oWait'); api({act:'bc',d:init,row:o.row,id:o.id,q:q,e:b.dataset.g},function(r){ if(r&&r.ok){ fin('✅ '+(ru?'Бронь подтверждена':'Bron tasdiqlandi')+'<div style="font-weight:400;margin-top:6px">'+r.qty+' '+t('pcs')+' · '+(r.yes?t('engr'):t('plain'))+' · <b>'+fmt(r.total)+'</b></div><div style="font-weight:400;margin-top:6px;color:var(--muted)">'+(ru?'Менеджер свяжется с вами.':'Menejer siz bilan bog‘lanadi.')+'</div>',function(){ ((ME&&ME.orders)||[]).forEach(function(x){ if(String(x.id)===String(o.id)){ x.st='new'; x.qty=r.qty; x.engr=r.yes?'С гравировкой':'Без гравировки'; x.sum=r.total } }) }) } else { s2(); var er=$('er'); er.style.display='block'; er.textContent=(r&&r.msg)||t('oNet') } }) } }) }
   s1() }) }
 document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&&e.target.closest('[data-bk]'); if(!b) return; var id=b.getAttribute('data-oid'), o=((ME&&ME.orders)||[]).filter(function(x){return String(x.id)===String(id)})[0]; if(o) bronFlow(o,b.getAttribute('data-bk')) });
+// ekranni kattalashtirish (pinch / ikki marta bosish) o'chirilgan
+(function(){ try{ document.addEventListener('gesturestart',function(e){ e.preventDefault() },{passive:false}); document.addEventListener('gesturechange',function(e){ e.preventDefault() },{passive:false}); document.addEventListener('touchmove',function(e){ if(e.touches&&e.touches.length>1) e.preventDefault() },{passive:false}); new MutationObserver(function(){ var s=$('scrim'); if(s&&!s.classList.contains('on')) s.classList.remove('solid') }).observe($('scrim'),{attributes:true,attributeFilter:['class']}) }catch(e){} })();
 function zoomOpen(x,slides,start){
  var z=$('zoom');
  z.innerHTML='<div class="ztr" id="ztr">'+slides.map(function(s,i){ return '<div class="zs" data-i="'+i+'">'+(s.t==='img'?'<img src="'+esc(s.u)+'" alt="">':vidHtml(x,'zv'))+'</div>' }).join('')+'</div>'+
@@ -757,7 +762,7 @@ function openSheet(id){
    (slides.length>1?'<span class="cnt" id="cnt">1/'+slides.length+'</span><div class="dots" id="dots">'+slides.map(function(_,i){return '<i'+(i?'':' class="on"')+'></i>'}).join('')+'</div>':'')+'</div>';
  }
  function stopVids(){ Array.prototype.forEach.call($('sheet').querySelectorAll('.vph iframe'),function(f){f.parentNode.removeChild(f)}) }
- function paint(){
+ function paint(){ $('scrim').classList.remove('solid');
   var out=x.qty<=0;
   $('sheet').innerHTML='<div class="shd ph" id="psh"><span class="grow ttl">'+esc(x.name)+'</span><button class="close" id="cl" aria-label="'+t('close')+'">✕</button></div>'+gal()+
   '<h3>'+esc(x.name)+'</h3><div class="stock'+(x.qty>0&&x.qty<=5?' low':'')+'">'+(out?t('gone'):t('inst')+': '+x.qty+' '+t('pcs'))+'</div>'+
@@ -802,12 +807,13 @@ function whoPick(box,opt,done,back){
    lst.innerHTML=r.length?r.map(function(u,i){ return '<button class="opt" data-i="'+i+'" style="margin-bottom:6px"><b>'+esc(u.name)+'</b><div style="font-weight:400;font-size:12.5px;color:var(--muted)">'+esc([u.company,u.phone,u.username?'@'+u.username:''].filter(Boolean).join(' · '))+'</div></button>' }).join('')+(false?'<div style="color:var(--muted);font-size:12px;padding:4px 2px">… '+(tot-40)+' '+(ru?'ещё — уточните поиск':'ta yana — qidiruvni aniqlang')+'</div>':''):'<div style="color:var(--muted);padding:10px 2px">'+(ru?'Не найдено':'Topilmadi')+'</div>';
    Array.prototype.forEach.call(lst.querySelectorAll('[data-i]'),function(b){ b.onclick=function(){ var u=r[+b.dataset.i]; done({text:[u.name,u.company,u.phone].filter(Boolean).join(', '),uid:u.id}) } }) }
   q.oninput=draw; draw();
-  $('wm').onclick=function(){ var HID=['wq','wc','wl','wm','ws','bk']; HID.forEach(function(k){ var e=$(k); if(e) e.style.display='none' }); $('wman').style.display='block'; if(!$('wbl')) $('wman').insertAdjacentHTML('beforeend','<button class="sec" id="wbl">← '+(ru?'Вернуться к списку':'Ro‘yxatga qaytish')+'</button>'); $('wbl').onclick=function(){ HID.forEach(function(k){ var e=$(k); if(e) e.style.display='' }); $('wman').style.display='none'; $('scrim').classList.remove('solid') }; $('scrim').classList.add('solid'); $('sheet').scrollTop=0; setTimeout(function(){ try{ $('wh').focus() }catch(e){} },60) };
-  $('wok').onclick=function(){ var v=$('wh').value.trim(); if(!v){ var er=$('er'); er.style.display='block'; er.textContent=ru?'Напишите, для кого':'Kim uchun ekanini yozing'; return } $('scrim').classList.remove('solid'); done({text:v,uid:''}) };
+  $('wm').onclick=function(){ var HID=['wq','wc','wl','wm','ws','bk']; HID.forEach(function(k){ var e=$(k); if(e) e.style.display='none' }); $('wman').style.display='block'; if(!$('wbl')) $('wman').insertAdjacentHTML('beforeend','<button class="sec" id="wbl">← '+(ru?'Вернуться к списку':'Ro‘yxatga qaytish')+'</button>'); $('wbl').onclick=function(){ HID.forEach(function(k){ var e=$(k); if(e) e.style.display='' }); $('wman').style.display='none' }; $('scrim').classList.add('solid'); $('sheet').scrollTop=0; setTimeout(function(){ try{ $('wh').focus() }catch(e){} },60) };
+  $('wok').onclick=function(){ var v=$('wh').value.trim(); if(!v){ var er=$('er'); er.style.display='block'; er.textContent=ru?'Напишите, для кого':'Kim uchun ekanini yozing'; return } done({text:v,uid:''}) };
   if(opt.skip) $('ws').onclick=function(){ done({text:'',uid:''}) };
   $('bk').onclick=back });
 }
 function svcFlow(){
+ $('scrim').classList.add('solid');
  var sh=$('sheet'), ru=lang==='ru', st={type:'',qty:0,price:0,who:'',uid:''};
  var box=function(h,prev){ sh.innerHTML='<div class="shd">'+(prev?'<button class="back" id="pv">←</button>':'')+'<span class="grow"></span><button class="close" id="cl" aria-label="x">✕</button></div><div class="ord"><h3>'+(ru?'Заказ на услугу':'Xizmat buyurtmasi')+'</h3>'+h+'</div>'; $('cl').onclick=close; if(prev) $('pv').onclick=prev; sh.scrollTop=0 };
  function close(){ $('scrim').classList.remove('on'); sh.innerHTML='' }
@@ -828,6 +834,7 @@ function svcFlow(){
  $('scrim').classList.add('on'); s1();
 }
 function ordFlow(x,engr0,back){
+ $('scrim').classList.add('solid'); // buyurtma oynasi butun ekran: orqadagi katalog ko'rinmaydi
  var sh=$('sheet'), box=function(h,prev){ sh.innerHTML='<div class="shd">'+(prev?'<button class="back" id="pv" aria-label="'+t('back')+'">←</button>':'')+'<span class="grow"></span><button class="close" id="cl" aria-label="x">✕</button></div><div class="ord"><h3>'+esc(x.name)+'</h3>'+h+'</div>'; if(prev) $('pv').onclick=prev; $('cl').onclick=function(){ $('scrim').classList.remove('on'); sh.innerHTML='' }; sh.scrollTop=0 };
  var regForm=function(r){
   var h='<div class="msg">'+esc(r.intro||t('oReg'))+'</div>';
