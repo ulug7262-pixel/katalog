@@ -241,7 +241,7 @@ function shuffle10(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor
 var lang='uz', tg=window.Telegram&&window.Telegram.WebApp, DATA=null, state={folder:null,q:''};
 try{ var sv=localStorage.getItem('lp_lang'); if(sv) lang=sv; else if(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user&&tg.initDataUnsafe.user.language_code==='ru') lang='ru' }catch(e){}
 try{ if(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user) USERNAME=tg.initDataUnsafe.user.first_name||'' }catch(e){}
-try{ if(tg){ tg.ready(); tg.expand(); if(tg.colorScheme) document.documentElement.setAttribute('data-theme',tg.colorScheme) } }catch(e){}
+try{ if(tg){ tg.ready(); tg.expand(); try{ if(tg.disableVerticalSwipes) tg.disableVerticalSwipes() }catch(e){} /* pastga tortganda Mini App yopilmasin */ if(tg.colorScheme) document.documentElement.setAttribute('data-theme',tg.colorScheme) } }catch(e){}
 var $=function(i){return document.getElementById(i)};
 var t=function(k){return T[lang][k]};
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
@@ -735,7 +735,7 @@ function bronFlow(o,act){ var sh=$('sheet'), ru=lang==='ru', init=(tg&&tg.initDa
   s1() }) }
 document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&&e.target.closest('[data-bk]'); if(!b) return; var id=b.getAttribute('data-oid'), o=((ME&&ME.orders)||[]).filter(function(x){return String(x.id)===String(id)})[0]; if(o) bronFlow(o,b.getAttribute('data-bk')) });
 // ekranni kattalashtirish (pinch / ikki marta bosish) o'chirilgan
-(function(){ try{ document.addEventListener('gesturestart',function(e){ e.preventDefault() },{passive:false}); document.addEventListener('gesturechange',function(e){ e.preventDefault() },{passive:false}); document.addEventListener('touchmove',function(e){ if(e.touches&&e.touches.length>1) e.preventDefault() },{passive:false}); new MutationObserver(function(){ var s=$('scrim'); if(s&&!s.classList.contains('on')&&s.classList.contains('solid')) s.classList.remove('solid') }).observe($('scrim'),{attributes:true,attributeFilter:['class']}) }catch(e){} })();
+(function(){ try{ document.addEventListener('gesturestart',function(e){ e.preventDefault() },{passive:false}); document.addEventListener('gesturechange',function(e){ e.preventDefault() },{passive:false}); document.addEventListener('touchmove',function(e){ if(e.touches&&e.touches.length>1) e.preventDefault() },{passive:false}); new MutationObserver(function(){ var s=$('scrim'); if(s&&!s.classList.contains('on')&&s.classList.contains('solid')) s.classList.remove('solid'); try{ var ord=s&&s.classList.contains('on')&&s.classList.contains('solid'); if(tg&&ord!==window.__cc){ window.__cc=ord; if(ord){ if(tg.enableClosingConfirmation) tg.enableClosingConfirmation() } else if(tg.disableClosingConfirmation) tg.disableClosingConfirmation() } }catch(e){} }).observe($('scrim'),{attributes:true,attributeFilter:['class']}) }catch(e){} })();
 function zoomOpen(x,slides,start){
  var z=$('zoom');
  z.innerHTML='<div class="ztr" id="ztr">'+slides.map(function(s,i){ return '<div class="zs" data-i="'+i+'">'+(s.t==='img'?'<img src="'+esc(s.u)+'" alt="">':vidHtml(x,'zv'))+'</div>' }).join('')+'</div>'+
