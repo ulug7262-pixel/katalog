@@ -671,7 +671,7 @@ function staffAct(a,o){ var goBack=function(){ staffAct('go',o) };
  var ru=lang==='ru';
  if(a==='ed'){ editStep(o); return }
  if(a==='go'&&o.pay){ closeStep(o); return }
-if(a==='go'){ wiz(o,'<h4 style="font:700 16px var(--f-head);margin:6px 0">'+(ru?'Гравировка сделана или отдали пустой?':'Gravirovka qilindimi yoki bo‘shmi?')+'</h4><div class="pick"><button id="g1">🔥 '+(ru?'С гравировкой':'Gravirovka bilan')+'</button><button id="g0">⬜ '+(ru?'Пустой':'Bo‘sh')+'</button></div>');
+if(a==='go'){ var eg=String(o.engr||'').trim(); if(eg==='С гравировкой'||eg==='Гравировка'||eg==='UF печать'){ photoStep(o,'work',function(){ payStep(o,'✅ '+(ru?'Фото работы сохранено.':'Ish rasmi saqlandi.'),renderStaff) },renderStaff); return } if(eg==='Без гравировки'){ post({act:'se',id:o.id,row:o.row},function(r){ if(!r.ok){ sAlert(r.msg||t('oNet')); return } payStep(o,undefined,renderStaff) }); return } wiz(o,'<h4 style="font:700 16px var(--f-head);margin:6px 0">'+(ru?'Гравировка сделана или отдали пустой?':'Gravirovka qilindimi yoki bo‘shmi?')+'</h4><div class="pick"><button id="g1">🔥 '+(ru?'С гравировкой':'Gravirovka bilan')+'</button><button id="g0">⬜ '+(ru?'Пустой':'Bo‘sh')+'</button></div>');
   $('g1').onclick=function(){ photoStep(o,'work',function(){ payStep(o,'✅ '+(ru?'Фото работы сохранено.':'Ish rasmi saqlandi.'),goBack) },goBack) };
   $('g0').onclick=function(){ post({act:'se',id:o.id,row:o.row},function(r){ if(!r.ok){ sAlert(r.msg||t('oNet')); return } payStep(o,undefined,goBack) }) }; return }
  if(a==='pay'){ payStep(o); return }
