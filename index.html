@@ -201,6 +201,7 @@ h2{font:700 16px var(--f-head);margin:18px 0 10px}
 .sheet .shd.ph.sc .ttl{opacity:1}
 .pfoot{position:sticky;bottom:calc(-16px - env(safe-area-inset-bottom,0px));z-index:4;background:var(--surface);margin:14px -16px calc(-16px - env(safe-area-inset-bottom,0px));padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
 .pfoot .cta{margin-top:0}
+.otabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:3px;border-radius:12px;background:rgba(127,127,127,.14);margin:0 0 12px}.otabs button{border:0;background:transparent;color:var(--muted);font:600 14px var(--f-body,inherit);padding:9px;border-radius:9px;cursor:pointer}.otabs button.on{background:var(--surface);color:inherit;box-shadow:0 1px 3px rgba(0,0,0,.15)}.omh{font:700 12px var(--f-head);text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:14px 2px 6px}.ord1.dim{opacity:.6}.chip.cx{background:rgba(127,127,127,.16);color:var(--muted)}
 .scrim.solid{background:var(--surface)}
 .scrim.solid .sheet{max-width:none;max-height:none;height:100%;border-radius:0}
 html,body{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
@@ -343,16 +344,24 @@ function renderView(){
   if(DL.length) h+='<div style="margin:16px 0 8px;font:700 15px var(--f-head)">'+(ru?'Заказы в долг':'Qarzga olingan buyurtmalar')+'</div>';
   DL.forEach(function(o){ h+='<div class="ord1"><div class="r1"><div><b>'+esc(o.name)+'</b><div class="sm">'+esc(o.qty)+' '+t('pcs')+' · '+esc(o.date)+'</div>'+(o.by?'<div class="sm">👤 '+esc(o.by)+'</div>':'')+'</div><div class="sum">'+(o.amt?fmt(o.amt):'')+'</div></div></div>' });
  } else {
-  var L=(ME&&ME.orders)||[];
-  if(ME&&ME.debt>0) h+=debtBox('margin:0 0 12px'); else if(ME&&ME.avans>0) h+=avBox('margin:0 0 12px');
-  if(!L.length) h+='<div class="empty">'+t('noo')+'</div>';
-  L.forEach(function(o){
-   var st={book:t('sBook'),debt:t('sDebt'),done:t('sDone'),'new':t('sNew')}[o.st]||t('sNew');
-   h+='<div class="ord1"><div class="r1"><span class="av1">'+svg24('user',22)+'</span><div style="flex:1;min-width:0"><b>'+esc(o.name)+'</b><div class="sm">'+esc(o.qty)+' '+t('pcs')+(o.engr?' · '+esc(engLbl(o.engr)):'')+' · '+esc(o.date)+'</div>'+(o.by?'<div class="sm">👤 '+esc(o.by)+'</div>':'')+'</div><div class="sum">'+(o.sum?fmt(o.sum):'')+'</div></div><span class="chip '+esc(o.st)+'">'+st+(o.st==='book'&&o.until?(lang==='ru'?' · до '+esc(o.until):' · '+esc(o.until)+' gacha'):'')+'</span>'+bkBtns(o)+wpHtml(o)+'</div>';
-  });
+      var L0=(ME&&ME.orders)||[], CX=(ME&&ME.cx)||[];
+      if(ME&&ME.debt>0) h+=debtBox('margin:0 0 12px'); else if(ME&&ME.avans>0) h+=avBox('margin:0 0 12px');
+      var isArc=function(o){ return o.st==='done'&&o.pd };
+      var dk=function(s){ var m=String(s||'').match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/); return m?(+m[3])*10000+(+m[2])*100+(+m[1]):0 };
+      var mL=function(s){ var m=String(s||'').match(/\d{1,2}\.(\d{1,2})\.(\d{4})/); if(!m) return ''; return (ru?['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь']:['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'])[+m[1]-1]+' '+m[2] };
+      var LA=L0.filter(function(o){return !isArc(o)}), LR=L0.filter(isArc).concat(CX).sort(function(a,b){ return dk(b.date)-dk(a.date) });
+      var tab=state.otab==='r'?'r':'a', L=tab==='a'?LA:LR, lastM='';
+      h+='<div class="otabs"><button data-ot="a" class="'+(tab==='a'?'on':'')+'">'+(ru?'Активные':'Faol')+' · '+LA.length+'</button><button data-ot="r" class="'+(tab==='r'?'on':'')+'">'+(ru?'Архив':'Arxiv')+' · '+LR.length+'</button></div>';
+      if(!L.length) h+='<div class="empty">'+(tab==='r'?(ru?'В архиве пока пусто':'Arxiv hozircha bo‘sh'):t('noo'))+'</div>';
+      L.forEach(function(o){
+        if(tab==='r'){ var mk=mL(o.date); if(mk&&mk!==lastM){ lastM=mk; h+='<div class="omh">'+esc(mk)+'</div>' } }
+        var st={book:t('sBook'),debt:t('sDebt'),done:t('sDone'),'new':t('sNew'),cx:(ru?'Отменён':'Bekor qilingan')}[o.st]||t('sNew');
+        if(o.st==='done'&&o.pd) st+=' · '+(ru?'Оплачен':'To‘langan');
+        h+='<div class="ord1'+(o.st==='cx'?' dim':'')+'"><div class="r1"><span class="av1">'+svg24('user',22)+'</span><div style="flex:1;min-width:0"><b>'+esc(o.name)+'</b><div class="sm">'+esc(o.qty)+' '+t('pcs')+(o.engr?' · '+esc(engLbl(o.engr)):'')+' · '+esc(o.date)+'</div>'+(o.by?'<div class="sm">👤 '+esc(o.by)+'</div>':'')+'</div><div class="sum">'+(o.sum?fmt(o.sum):'')+'</div></div><span class="chip '+esc(o.st)+'">'+st+(o.st==='book'&&o.until?(lang==='ru'?' · до '+esc(o.until):' · '+esc(o.until)+' gacha'):'')+'</span>'+bkBtns(o)+wpHtml(o)+'</div>';
+      });
  }
  $('app').innerHTML=h; window.scrollTo(0,0);
- $('back').onclick=function(){ state.view=null; render() };
+ $('back').onclick=function(){ state.view=null; render() }; document.querySelectorAll('[data-ot]').forEach(function(b){ b.onclick=function(){ state.otab=b.getAttribute('data-ot'); renderView() } });
  $('lg').onclick=function(){ lang=lang==='uz'?'ru':'uz'; try{localStorage.setItem('lp_lang',lang)}catch(e){}; render() };
 }
 
@@ -715,11 +724,11 @@ function wpHtml(o){ var ru=lang==='ru'; if(o.wp) return '<div class="wph"><div c
 document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&&e.target.closest('.wpb'); if(!b) return; e.preventDefault(); var u=b.getAttribute('data-u')||''; zoomOpen(null,[{t:'img',u:u.replace('sz=w800','sz=w1600')}],0) });
 // kanal postidagi «📱 Заказать через приложение»: ?startapp=p107 — shu tovar darhol ochiladi
 var START_DONE=false;
-function startOpen(fromCache){ if(START_DONE||!DATA) return; var sp=''; try{ sp=String((tg&&tg.initDataUnsafe&&tg.initDataUnsafe.start_param)||'') }catch(e){} if(!sp){ try{ var qs=new URLSearchParams(location.search), hs=new URLSearchParams(String(location.hash||'').replace(/^#/,'')); sp=qs.get('tgWebAppStartParam')||hs.get('tgWebAppStartParam')||qs.get('startapp')||'' }catch(e){} } var mm=sp.match(/^p([\w-]+)$/); if(!mm){ START_DONE=true; return } var x=DATA.products.filter(function(p){return String(p.id)===mm[1]})[0]; if(x){ START_DONE=true; setTimeout(function(){ openSheet(x.id) },60); return } if(!fromCache) START_DONE=true }
+function startOpen(fromCache){ if(START_DONE||!DATA) return; var sp=''; try{ sp=String((tg&&tg.initDataUnsafe&&tg.initDataUnsafe.start_param)||'') }catch(e){} if(!sp){ try{ var qs=new URLSearchParams(location.search), hs=new URLSearchParams(String(location.hash||'').replace(/^#/,'')); sp=qs.get('tgWebAppStartParam')||hs.get('tgWebAppStartParam')||qs.get('startapp')||'' }catch(e){} } if(sp==='my'){ START_DONE=true; if(!state.view){ state.view='orders'; setTimeout(render,60) } return } var mm=sp.match(/^p([\w-]+)$/); if(!mm){ START_DONE=true; return } var x=DATA.products.filter(function(p){return String(p.id)===mm[1]})[0]; if(x){ START_DONE=true; setTimeout(function(){ openSheet(x.id) },60); return } if(!fromCache) START_DONE=true }
 // bron: son kiritish bloki (mijoz va menejer uchun bir xil)
 function bqHtml(c,q){ var ru=lang==='ru'; return '<h4 style="font:700 16px var(--f-head);margin:6px 0">'+(ru?'Сколько штук берёте?':'Nechta olasiz?')+'</h4><div class="bq2"><div class="w">⏳ '+(ru?'Забронировано':'Bron qilingan')+'<b>'+c.qty+' '+t('pcs')+'</b></div><div>📦 '+(ru?'Ещё на складе':'Omborda yana')+'<b>'+c.ost+' '+t('pcs')+'</b></div></div><div class="bqn">'+(ru?'Можно взять до '+(c.qty+c.ost)+' шт.':'Ko‘pi bilan '+(c.qty+c.ost)+' ta olish mumkin.')+'</div><input class="bqi" id="bqi" type="text" inputmode="numeric" pattern="[0-9]*" value="'+q+'" autocomplete="off"><div class="msg" id="bqe" style="display:none"></div>' }
 function bqRead(c){ var ru=lang==='ru', v=Number(String($('bqi').value).replace(/\D/g,'')), max=c.qty+c.ost, e=$('bqe'); if(!(v>0)||v>max){ e.style.display='block'; e.textContent=ru?'Введите число от 1 до '+max:'1 dan '+max+' gacha son yozing'; return 0 } return v }
-function bkBtns(o){ if(o.st!=='book'||!o.mine||!o.row) return ''; var ru=lang==='ru'; return '<div class="bkb"><button data-bk="c" data-oid="'+esc(o.id)+'">✅ '+(ru?'Подтвердить':'Tasdiqlash')+'</button><button class="no" data-bk="x" data-oid="'+esc(o.id)+'">❌ '+(ru?'Отменить':'Bekor qilish')+'</button></div>' }
+function bkBtns(o){ if(o.st!=='book'||!o.mine||!o.row) return ''; var ru=lang==='ru'; return '<div class="bkb"><button class="no" data-bk="x" data-oid="'+esc(o.id)+'">❌ '+(ru?'Отменить':'Bekor qilish')+'</button></div>' }
 function bronFlow(o,act){ var sh=$('sheet'), ru=lang==='ru', init=(tg&&tg.initData)||'';
  function close(){ $('scrim').classList.remove('on'); sh.innerHTML='' }
  var box=function(h,prev){ sh.innerHTML='<div class="shd">'+(prev?'<button class="back" id="pv" aria-label="'+t('back')+'">←</button>':'')+'<span class="grow"></span><button class="close" id="cl" aria-label="x">✕</button></div><div class="ord"><h3>'+esc(o.name)+'</h3>'+h+'</div>'; $('cl').onclick=close; if(prev) $('pv').onclick=prev; sh.scrollTop=0 };
