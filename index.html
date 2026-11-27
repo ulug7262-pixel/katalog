@@ -697,7 +697,7 @@ function wpHtml(o){ var ru=lang==='ru'; if(o.wp) return '<div class="wph"><div c
 document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&&e.target.closest('.wpb'); if(!b) return; e.preventDefault(); var u=b.getAttribute('data-u')||''; zoomOpen(null,[{t:'img',u:u.replace('sz=w800','sz=w1600')}],0) });
 // kanal postidagi «📱 Заказать через приложение»: ?startapp=p107 — shu tovar darhol ochiladi
 var START_DONE=false;
-function startOpen(fromCache){ if(START_DONE||!DATA) return; var sp=''; try{ sp=String((tg&&tg.initDataUnsafe&&tg.initDataUnsafe.start_param)||'') }catch(e){} var mm=sp.match(/^p([\w-]+)$/); if(!mm){ START_DONE=true; return } var x=DATA.products.filter(function(p){return String(p.id)===mm[1]})[0]; if(x){ START_DONE=true; setTimeout(function(){ openSheet(x.id) },60); return } if(!fromCache) START_DONE=true }
+function startOpen(fromCache){ if(START_DONE||!DATA) return; var sp=''; try{ sp=String((tg&&tg.initDataUnsafe&&tg.initDataUnsafe.start_param)||'') }catch(e){} if(!sp){ try{ var qs=new URLSearchParams(location.search), hs=new URLSearchParams(String(location.hash||'').replace(/^#/,'')); sp=qs.get('tgWebAppStartParam')||hs.get('tgWebAppStartParam')||qs.get('startapp')||'' }catch(e){} } var mm=sp.match(/^p([\w-]+)$/); if(!mm){ START_DONE=true; return } var x=DATA.products.filter(function(p){return String(p.id)===mm[1]})[0]; if(x){ START_DONE=true; setTimeout(function(){ openSheet(x.id) },60); return } if(!fromCache) START_DONE=true }
 function zoomOpen(x,slides,start){
  var z=$('zoom');
  z.innerHTML='<div class="ztr" id="ztr">'+slides.map(function(s,i){ return '<div class="zs" data-i="'+i+'">'+(s.t==='img'?'<img src="'+esc(s.u)+'" alt="">':vidHtml(x,'zv'))+'</div>' }).join('')+'</div>'+
