@@ -419,7 +419,7 @@ function payStep(o,pre,prev){
  var me=function(){ payStep(o,pre,prev) };
  wiz(o,(pre?'<div class="msg" style="background:var(--chip);border-radius:12px;padding:12px;margin:8px 0">'+pre+'</div>':'')+payInfo(o)+'<h4 style="font:700 16px var(--f-head);margin:6px 0">'+(SF.tab==='debt'?(ru?'Как оплачен остаток?':'Qolgani qanday to‘landi?'):(ru?'Как оплачено?':'Qanday to‘langan?'))+'</h4><div class="pick" style="grid-template-columns:1fr">'+L.map(function(x){return '<button data-p="'+x[0]+'">'+x[1]+'</button>'}).join('')+'</div>',prev);
  Array.prototype.forEach.call(document.querySelectorAll('[data-p]'),function(b){ b.onclick=function(){ var ty=b.dataset.p;
-  if(ty==='later'){ post({act:'sp',id:o.id,row:o.row,p:'later'},function(r){ if(!r||!r.ok){ sAlert((r&&r.msg)||t('oNet')); return } doneMsg(o) }); return }
+  if(ty==='later'){ post({act:'sp',id:o.id,row:o.row,p:'later'},function(r){ if(!r||!r.ok){ sAlert((r&&r.msg)||t('oNet')); return } closeStep(o) }); return }
   fullStep(o,ty,me) } });
 }
 function fullStep(o,ty,back){
@@ -638,7 +638,8 @@ function stDetail(){
 function staffAct(a,o){ var goBack=function(){ staffAct('go',o) };
  var ru=lang==='ru';
  if(a==='ed'){ editStep(o); return }
- if(a==='go'){ wiz(o,'<h4 style="font:700 16px var(--f-head);margin:6px 0">'+(ru?'Гравировка сделана или отдали пустой?':'Gravirovka qilindimi yoki bo‘shmi?')+'</h4><div class="pick"><button id="g1">🔥 '+(ru?'С гравировкой':'Gravirovka bilan')+'</button><button id="g0">⬜ '+(ru?'Пустой':'Bo‘sh')+'</button></div>');
+ if(a==='go'&&o.pay){ closeStep(o); return }
+if(a==='go'){ wiz(o,'<h4 style="font:700 16px var(--f-head);margin:6px 0">'+(ru?'Гравировка сделана или отдали пустой?':'Gravirovka qilindimi yoki bo‘shmi?')+'</h4><div class="pick"><button id="g1">🔥 '+(ru?'С гравировкой':'Gravirovka bilan')+'</button><button id="g0">⬜ '+(ru?'Пустой':'Bo‘sh')+'</button></div>');
   $('g1').onclick=function(){ photoStep(o,'work',function(){ payStep(o,'✅ '+(ru?'Фото работы сохранено.':'Ish rasmi saqlandi.'),goBack) },goBack) };
   $('g0').onclick=function(){ post({act:'se',id:o.id,row:o.row},function(r){ if(!r.ok){ sAlert(r.msg||t('oNet')); return } payStep(o,undefined,goBack) }) }; return }
  if(a==='pay'){ payStep(o); return }
