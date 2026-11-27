@@ -119,6 +119,10 @@ h2{font:700 16px var(--f-head);margin:18px 0 10px}
 .ord1 b{font:600 15px var(--f-head);overflow-wrap:anywhere}
 .ord1 .sm{color:var(--muted);font-size:12.5px;margin-top:3px}
 .ord1 .sum{font:700 15px var(--f-head);white-space:nowrap}
+.wph{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.wpb{display:block;width:88px;height:88px;border:0;padding:0;border-radius:11px;overflow:hidden;background:var(--chip);cursor:zoom-in;margin-top:6px;position:relative}
+.wpb img{width:100%;height:100%;object-fit:cover;display:block}
+.wpb::after{content:"⤢";position:absolute;right:4px;bottom:4px;width:20px;height:20px;border-radius:6px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;display:grid;place-items:center}
 .chip{display:inline-block;font:600 11.5px var(--f-head);padding:3px 9px;border-radius:99px;background:var(--chip);margin-top:8px}
 .chip.book{background:#F4B93A;color:#2b1d00}.chip.debt{background:var(--sale);color:#fff}.chip.done{background:var(--accent);color:var(--accent-ink)}
 .bigdebt{background:var(--sale);color:#fff;border-radius:18px;padding:26px 20px;text-align:center;margin-top:14px}
@@ -256,7 +260,7 @@ function load(){
   if(RAND.length){ var ids={}; d.products.forEach(function(x){ids[x.id]=x}); RAND=RAND.map(function(x){return ids[x.id]}).filter(function(x){return x&&x.qty>0}) }
   if(RAND.length<4) RAND=shuffle10(d.products.filter(function(x){return x.qty>0}));
   if(!fromCache){ try{ localStorage.setItem('lp_cat',JSON.stringify(d)) }catch(e){} }
-  if(!was){ render(); return }
+  if(!was){ render(); startOpen(fromCache); return } startOpen(fromCache);
   if(!state.view&&!$('scrim').classList.contains('on')&&document.activeElement!==$('q')){ var y=window.scrollY; render(); window.scrollTo(0,y) }
  };
  if(cached&&!DATA) ok(cached,true);
@@ -325,7 +329,7 @@ function renderView(){
   if(!L.length) h+='<div class="empty">'+t('noo')+'</div>';
   L.forEach(function(o){
    var st={book:t('sBook'),debt:t('sDebt'),done:t('sDone'),'new':t('sNew')}[o.st]||t('sNew');
-   h+='<div class="ord1"><div class="r1"><span class="av1">'+svg24('user',22)+'</span><div style="flex:1;min-width:0"><b>'+esc(o.name)+'</b><div class="sm">'+esc(o.qty)+' '+t('pcs')+(o.engr?' · '+esc(engLbl(o.engr)):'')+' · '+esc(o.date)+'</div>'+(o.by?'<div class="sm">👤 '+esc(o.by)+'</div>':'')+'</div><div class="sum">'+(o.sum?fmt(o.sum):'')+'</div></div><span class="chip '+esc(o.st)+'">'+st+'</span></div>';
+   h+='<div class="ord1"><div class="r1"><span class="av1">'+svg24('user',22)+'</span><div style="flex:1;min-width:0"><b>'+esc(o.name)+'</b><div class="sm">'+esc(o.qty)+' '+t('pcs')+(o.engr?' · '+esc(engLbl(o.engr)):'')+' · '+esc(o.date)+'</div>'+(o.by?'<div class="sm">👤 '+esc(o.by)+'</div>':'')+'</div><div class="sum">'+(o.sum?fmt(o.sum):'')+'</div></div><span class="chip '+esc(o.st)+'">'+st+'</span>'+wpHtml(o)+'</div>';
   });
  }
  $('app').innerHTML=h; window.scrollTo(0,0);
@@ -688,6 +692,12 @@ function vidUrl(id){ return 'https://drive.google.com/uc?export=download&id='+en
 function vidHtml(x,cls){ return '<div class="vph '+cls+'" data-pv="https://drive.google.com/file/d/'+esc(x.video)+'/preview"'+(x.photos[0]?' style="background-image:url(\''+esc(x.photos[0])+'\')"':'')+'><span class="play"></span></div>' }
 function playIn(box,idx){ Array.prototype.forEach.call(box.querySelectorAll('.vph'),function(v){ var p=v.parentNode, mine=p&&p.dataset&&+p.dataset.i===idx, f=v.querySelector('iframe'); if(mine&&!f){ f=document.createElement('iframe'); f.src=v.dataset.pv; f.allow='autoplay; fullscreen'; f.setAttribute('allowfullscreen',''); v.appendChild(f) } else if(!mine&&f){ v.removeChild(f) } }) }
 function trackIdx(tr){ return Math.round(tr.scrollLeft/Math.max(tr.clientWidth,1)) }
+// ish rasmi (Mening buyurtmalarim): kichik rasm, bosilsa kattalashadi
+function wpHtml(o){ var ru=lang==='ru'; if(o.wp) return '<div class="wph"><div class="sm">📷 '+(ru?'Фото работы':'Ish rasmi')+'</div><button class="wpb" data-u="'+esc(o.wp)+'" aria-label="'+(ru?'Увеличить':'Kattalashtirish')+'"><img src="'+esc(o.wp)+'" alt="" loading="lazy" onerror="var w=this.closest(\'.wph\');if(w)w.style.display=\'none\'"></button></div>'; if(o.ew&&o.st==='new') return '<div class="wph"><div class="sm">⏳ '+(ru?'Фото работы появится здесь, когда будет готово':'Ish rasmi tayyor bo‘lganda shu yerda chiqadi')+'</div></div>'; return '' }
+document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&&e.target.closest('.wpb'); if(!b) return; e.preventDefault(); var u=b.getAttribute('data-u')||''; zoomOpen(null,[{t:'img',u:u.replace('sz=w800','sz=w1600')}],0) });
+// kanal postidagi «📱 Заказать через приложение»: ?startapp=p107 — shu tovar darhol ochiladi
+var START_DONE=false;
+function startOpen(fromCache){ if(START_DONE||!DATA) return; var sp=''; try{ sp=String((tg&&tg.initDataUnsafe&&tg.initDataUnsafe.start_param)||'') }catch(e){} var mm=sp.match(/^p([\w-]+)$/); if(!mm){ START_DONE=true; return } var x=DATA.products.filter(function(p){return String(p.id)===mm[1]})[0]; if(x){ START_DONE=true; setTimeout(function(){ openSheet(x.id) },60); return } if(!fromCache) START_DONE=true }
 function zoomOpen(x,slides,start){
  var z=$('zoom');
  z.innerHTML='<div class="ztr" id="ztr">'+slides.map(function(s,i){ return '<div class="zs" data-i="'+i+'">'+(s.t==='img'?'<img src="'+esc(s.u)+'" alt="">':vidHtml(x,'zv'))+'</div>' }).join('')+'</div>'+
