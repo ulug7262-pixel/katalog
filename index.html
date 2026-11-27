@@ -186,6 +186,7 @@ h2{font:700 16px var(--f-head);margin:18px 0 10px}
 .zoom .zd{bottom:calc(18px + env(safe-area-inset-bottom,0px))}
 .chk{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.ck{position:relative;aspect-ratio:3/4;border-radius:10px;overflow:hidden;background:var(--chip)}.ck img{width:100%;height:100%;object-fit:cover;display:block}.ck span{position:absolute;left:4px;bottom:4px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:1px 6px;border-radius:6px}.ck button{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:12px}
 .wl{height:268px;max-height:calc(var(--vh,100vh) - 300px);min-height:140px;overflow-y:auto;overscroll-behavior:contain;margin:4px 0 8px;border:1px solid var(--line);border-radius:14px;padding:6px}.wl .opt{margin-bottom:6px}.wmeta{color:var(--muted);font-size:12.5px;margin:2px 2px 0}
+.sw{position:relative}.sw .search{margin:0 0 4px;padding-right:46px}.sw button{position:absolute;right:7px;top:50%;transform:translateY(-55%);width:32px;height:32px;border-radius:50%;border:0;background:var(--chip);color:var(--ink);font-size:14px}
 </style></head><body>
 <div class="app" id="app"><div class="load">…</div></div>
 <div class="scrim" id="scrim"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
@@ -231,6 +232,7 @@ var IC24={
  user:'<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
  manager:'<circle cx="12" cy="7.5" r="3.5"/><path d="M5 20.5v-1.2a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1.2"/><path d="M12 14.5l-1.3 1.6 1.3 3.6 1.3-3.6z"/>',
  hands:'<circle cx="12" cy="6" r="3"/><path d="M12 4.7v2.6M10.9 5.4h2.2"/><path d="M2.5 14.5h3.2l3.1-1.6h3.6a1.5 1.5 0 0 1 0 3H9.4"/><path d="M12.4 16l1.6-.6 3.5-1.7a1.5 1.5 0 0 1 1.5 2.6L14.6 20H7.8L5.7 18.2"/><path d="M2.5 13v7.5"/>',
+ medal:'<path d="M7.5 2.5h9"/><path d="M7.5 2.5l3.6 7.4"/><path d="M16.5 2.5l-3.6 7.4"/><circle cx="12" cy="15.5" r="5.5"/><path d="M12 12.6l.85 1.75 1.9.27-1.38 1.33.33 1.9-1.7-.9-1.7.9.33-1.9-1.38-1.33 1.9-.27z"/>',
  wrench:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>'
 };
 var svg24=function(k,s){return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+IC24[k]+'</svg>'};
@@ -254,7 +256,7 @@ function load(){
 function fail(){ $('app').innerHTML='<div class="empty">'+t('err')+'<br><button id="rt">'+t('retry')+'</button></div>'; $('rt').onclick=load }
 
 function vis(){ var P=DATA.products; return (ME&&ME.staff)?P:P.filter(function(x){return x.qty>0}) }
-function catName(f){ return lang==='ru'?({Statuetkalar:'Статуэтки',Plaketkalar:'Плакетки'}[f]||f):f }
+function catName(f){ return lang==='ru'?({Statuetkalar:'Статуэтки',Plaketkalar:'Плакетки',Medallar:'Медали'}[f]||f):f }
 function folderList(){
  var P=vis(), out=[];
  var sale=P.filter(function(x){return x.old||x.oldE}), nw=P.filter(function(x){return x.isNew});
@@ -262,7 +264,7 @@ function folderList(){
  if(nw.length) out.push({id:'@new',name:t('news'),ic:'star',n:nw.length});
  var names=(DATA.cats||[]).slice();
  P.forEach(function(x){(x.folders||[]).forEach(function(f){ if(names.indexOf(f)<0) names.push(f) })});
- names.forEach(function(f){ var n=P.filter(function(x){return (x.folders||[]).indexOf(f)>=0}).length; if(n) out.push({id:f,name:catName(f),ic:/plaket|плакет/i.test(f)?'plaque':/statu|статуэт/i.test(f)?'trophy':'folder',n:n}) });
+ names.forEach(function(f){ var n=P.filter(function(x){return (x.folders||[]).indexOf(f)>=0}).length; if(n) out.push({id:f,name:catName(f),ic:/plaket|плакет/i.test(f)?'plaque':/statu|статуэт/i.test(f)?'trophy':/medal|медал/i.test(f)?'medal':'folder',n:n}) });
  return out;
 }
 function inFolder(x,id){ if(id==='@all') return true; if(id==='@sale') return !!(x.old||x.oldE); if(id==='@new') return !!x.isNew; return (x.folders||[]).indexOf(id)>=0 }
@@ -330,9 +332,22 @@ function sTop(title,backFn){
 }
 function renderStaff(){
  sTop(t('stf'),function(){ state.view=null; render() });
- var sb=$('sb'); sb.innerHTML='<div class="load">…</div>';
- sapi('sl',{},function(r){ if(!r.ok){ sb.innerHTML='<div class="empty">'+esc(r.msg||t('oNet'))+'</div>'; return } SF.list=r; drawStaff() });
+ if(!SF.list){ try{ var c0=localStorage.getItem('lp_sl'); if(c0) SF.list=JSON.parse(c0) }catch(e){} }
+ if(SF.list) drawStaff(); else $('sb').innerHTML='<div class="load">…</div>';
+ if(SF.pending) SF.wantRefresh=true; else refreshStaff();
 }
+function refreshStaff(){
+ var my=SF.seq=(SF.seq||0)+1;
+ sapi('sl',{},function(r){
+  if(my!==SF.seq) return;
+  if(!r||!r.ok){ if(!SF.list&&$('sb')&&state.view==='staff') $('sb').innerHTML='<div class="empty">'+esc((r&&r.msg)||t('oNet'))+'</div>'; return }
+  SF.list=r; try{ localStorage.setItem('lp_sl',JSON.stringify(r)) }catch(e){}
+  if(state.view==='staff'&&$('t1')&&SF.tab!=='co'){ var f=document.activeElement&&document.activeElement.id==='sq', p=f?$('sq').selectionStart:0, y=window.scrollY; drawStaff(); if(f){ var n=$('sq'); if(n){ n.focus(); try{n.setSelectionRange(p,p)}catch(e){} } } window.scrollTo(0,y) }
+ });
+}
+function spost(o,cb){ SF.pending=(SF.pending||0)+1; post(o,function(r){ SF.pending--; if(cb) cb(r); if(!SF.pending&&SF.wantRefresh){ SF.wantRefresh=false; refreshStaff() } }) }
+function dropLocal(o,which){ var r=SF.list; if(!r) return; ['open','debt'].forEach(function(k){ if(which!=='both'&&which!==k) return; r[k]=(r[k]||[]).filter(function(x){ return String(x.id)!==String(o.id) }) }); r.total=(r.debt||[]).reduce(function(a,x){return a+(+x.amount||0)},0); try{ localStorage.setItem('lp_sl',JSON.stringify(r)) }catch(e){} }
+
 function contactInfo(o){ var txt=String(o.cust||''), un='', ph='';
  if(o.fw){ var m=txt.match(/@([A-Za-z0-9_]{4,})/); if(m) un=m[1]; var d=(String(o.phone||'')+' '+txt).match(/\+?\d[\d\s().-]{7,}\d/); if(d) ph=d[0].replace(/[^\d+]/g,'') }
  else { un=o.tgu||''; ph=String(o.phone||'').replace(/[^\d+]/g,'') }
@@ -347,7 +362,8 @@ function drawStaff(){
  var h='<div class="tabs"><button id="t1" aria-pressed="'+(SF.tab==='open')+'">'+t('op')+' ('+r.open.length+')</button><button id="t2" aria-pressed="'+(SF.tab==='debt')+'">'+t('unp')+' ('+r.debt.length+')</button>'+(ME&&ME.adm?'<button id="t3" aria-pressed="'+(SF.tab==='co')+'">'+(lang==='ru'?'Должники':'Qarzdorlar')+'</button>':'')+'</div>';
  if(SF.tab==='debt') h+='<div class="bigdebt" style="margin:0 0 12px;padding:16px"><small>'+t('tdebt')+'</small><div style="font-size:26px">'+fmt(r.total)+'</div></div>';
  if(SF.tab==='co'){ drawCo(h); return }
- var L=SF.tab==='debt'?r.debt:r.open;
+ var kq=(SF.q||'').trim().toLowerCase(), L0=(SF.tab==='debt'?r.debt:r.open)||[], L=kq?L0.filter(function(o){return (o.id+' '+o.name+' '+o.cust+' '+(o.company||'')+' '+(o.phone||'')).toLowerCase().indexOf(kq)>=0}):L0;
+h+='<div class="sw"><input id="sq" class="search" placeholder="'+(lang==='ru'?'🔍 Клиент, телефон, товар или №':'🔍 Mijoz, telefon, tovar yoki №')+'" value="'+esc(SF.q||'')+'" autocomplete="off">'+(SF.q?'<button id="sqx" aria-label="x">✕</button>':'')+'</div><div class="wmeta" style="margin:0 2px 10px">'+(kq?(lang==='ru'?'Найдено: ':'Topildi: '):(lang==='ru'?'Всего: ':'Jami: '))+L.length+'</div>'+(SF.toast?'<div class="msg" style="background:var(--accent-soft);border-radius:12px;padding:10px 12px;margin:0 0 10px">'+SF.toast+'</div>':'');
  if(!L.length) h+='<div class="empty">—</div>';
  L.forEach(function(o,i){
   var bt='';
@@ -357,6 +373,9 @@ function drawStaff(){
   h+='<div class="so">'+((SF.tab==='debt'?o.photo:o.pic)?'<img src="'+esc(SF.tab==='debt'?o.photo:o.pic)+'" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin-bottom:10px;display:block">':'')+'<div class="h"><b>'+esc(o.name)+'</b><span class="id">№'+esc(o.id)+'</span></div><div class="sm" style="color:var(--muted);font-size:12.5px;margin-top:3px">'+esc(o.qty)+' '+t('pcs')+' · '+esc(o.date)+'</div>'+engChip(o)+'<div class="cu">👤 '+esc(o.cust)+'</div>'+contactHtml(o)+(SF.tab==='debt'?'<div class="cu" style="font-weight:700">💵 '+fmt(o.amount)+(o.part>0?' <span style="font-weight:400;color:var(--muted)">· '+(lang==='ru'?'оплачено ':'to‘langan ')+fmt(o.part)+'</span>':'')+'</div>':'')+'<div class="bt">'+bt+'</div></div>';
  });
  sb.innerHTML=h;
+SF.toast='';
+var sq=$('sq'); if(sq) sq.oninput=function(){ var p=sq.selectionStart; SF.q=sq.value; drawStaff(); var n=$('sq'); n.focus(); try{n.setSelectionRange(p,p)}catch(e){} };
+var sqx=$('sqx'); if(sqx) sqx.onclick=function(){ SF.q=''; drawStaff(); var n=$('sq'); if(n) n.focus() };
  Array.prototype.forEach.call(sb.querySelectorAll('[data-tel]'),function(a){ a.onclick=function(e){ e.preventDefault(); var h=a.getAttribute('href'); try{ window.location.href=h }catch(err){} } });
  Array.prototype.forEach.call(sb.querySelectorAll('[data-tg]'),function(a){ a.onclick=function(e){ try{ if(tg&&tg.openTelegramLink){ e.preventDefault(); tg.openTelegramLink(a.getAttribute('href')) } }catch(err){} } });
  $('t1').onclick=function(){SF.tab='open';drawStaff()}; $('t2').onclick=function(){SF.tab='debt';drawStaff()}; if($('t3')) $('t3').onclick=function(){SF.tab='co';drawStaff()};
@@ -408,7 +427,7 @@ function payGo(o,ty,amt,back){
  wiz(o,'<div class="msg" style="background:var(--chip);border-radius:12px;padding:12px;margin:8px 0">'+t('oWait')+'</div>');
  post({act:'sp',id:o.id,row:o.row,p:ty,a:amt},function(r){
   if(!r||!r.ok){ sAlert((r&&r.msg)||t('oNet')); back(); return }
-  o.part=r.paid; o.amount=r.rest;
+  o.part=r.paid; o.amount=r.rest; if(SF.tab==='debt'&&!r.partial) dropLocal(o,'debt'); if(SF.list) try{ localStorage.setItem('lp_sl',JSON.stringify(SF.list)) }catch(e){}
   var pre='✅ '+(r.partial?(ru?'Частичная оплата: ':'Qisman to‘lov: ')+fmt(r.now)+' · '+(ru?'в долг: ':'qarzga: ')+fmt(r.rest):(ru?'Оплата записана':'To‘lov yozildi'));
   if(ty==='card') checksStep(o,pre,function(){ closeStep(o) }); else closeStep(o);
  });
@@ -429,9 +448,9 @@ function closeStep(o,prev){
  var ru=lang==='ru';
  if(SF.tab==='debt'){ doneMsg(o); return }
  wiz(o,'<h4 style="font:700 16px var(--f-head);margin:6px 0">'+(ru?'Заказ обработан?':'Buyurtma bajarildimi?')+'</h4><div class="pick"><button id="y1">'+(ru?'✔ Да, закрыть':'✔ Ha, yopish')+'</button><button id="y0">'+(ru?'Оставить открытым':'Ochiq qoldirish')+'</button></div>',prev);
- $('y1').onclick=function(){ post({act:'sd',id:o.id,row:o.row},function(){ doneMsg(o) }) }; $('y0').onclick=function(){ doneMsg(o) };
+ $('y1').onclick=function(){ dropLocal(o,'open'); spost({act:'sd',id:o.id,row:o.row}); doneMsg(o) }; $('y0').onclick=function(){ doneMsg(o) };
 }
-function doneMsg(o){ wiz(o,'<div class="msg" style="background:var(--chip);border-radius:12px;padding:14px;font-weight:600;margin:10px 0">✅ '+(lang==='ru'?'Готово':'Tayyor')+'</div><button class="cta" id="bk2">'+t('oBack')+'</button>'); $('bk2').onclick=renderStaff }
+function doneMsg(o){ SF.toast='✅ №'+esc(o.id)+' — '+(lang==='ru'?'готово':'tayyor'); renderStaff() }
 
 function editStep(o){
  var ru=lang==='ru';
@@ -613,7 +632,7 @@ function staffAct(a,o){ var goBack=function(){ staffAct('go',o) };
  if(a==='bk'){ wiz(o,'<h4 style="font:700 16px var(--f-head);margin:6px 0">'+(ru?'Гравировка нужна?':'Gravirovka kerakmi?')+'</h4><div class="pick"><button id="b1">🔥 '+(ru?'С гравировкой':'Gravirovka bilan')+'</button><button id="b0">⬜ '+(ru?'Без':'Gravirovkasiz')+'</button></div>');
   $('b1').onclick=function(){ post({act:'sb',id:o.id,row:o.row,e:1},function(r){ if(!r.ok){ sAlert(r.msg||t('oNet')); return } doneMsg(o) }) }; $('b0').onclick=function(){ post({act:'sb',id:o.id,row:o.row,e:0},function(r){ if(!r.ok){ sAlert(r.msg||t('oNet')); return } doneMsg(o) }) }; return }
  if(a==='cx'){ wiz(o,'<div class="msg" style="background:var(--chip);border-radius:12px;padding:14px;margin:10px 0">'+(ru?'Отменить заказ? Количество вернётся на склад, заказ удалится из таблицы.':'Buyurtma bekor qilinsinmi? Soni omborga qaytadi, buyurtma jadvaldan o‘chadi.')+'</div><div class="pick"><button id="c1" style="background:var(--sale);color:#fff">'+(ru?'✔ Да, отменить':'✔ Ha, bekor qilish')+'</button><button id="c0">'+(ru?'Нет':'Yo‘q')+'</button></div>');
-  $('c1').onclick=function(){ post({act:'sx',id:o.id,row:o.row},function(r){ if(!r.ok){ sAlert(r.msg||t('oNet')); return } doneMsg(o) }) }; $('c0').onclick=renderStaff }
+  $('c1').onclick=function(){ post({act:'sx',id:o.id,row:o.row},function(r){ if(!r.ok){ sAlert(r.msg||t('oNet')); return } dropLocal(o,'both'); doneMsg(o) }) }; $('c0').onclick=renderStaff }
 }
 
 function render(){ $('app').classList.remove('smode');
@@ -624,7 +643,7 @@ function render(){ $('app').classList.remove('smode');
   h+='<div class="top"><div class="logo2"><img src="data:image/jpeg;base64,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" width="44" height="44" alt="Laser Point" style="border-radius:12px;display:block"></div><div class="grow"><h1>Laser Point</h1><small class="tel"><a href="tel:+998999898882">+998 99 989 88 82</a><a href="tel:+998339988882">+998 33 998 88 82</a></small></div>'+langBtn()+'</div>';
   h+='<div class="hello">'+t('hi')+(USERNAME?', <b>'+esc(USERNAME)+'</b>':'')+'! 👋</div>';
   h+='<input class="search" id="q" placeholder="'+t('search')+'" aria-label="'+t('search')+'">';
-  h+='<div class="folders">'+folderList().map(function(f){ if(f.sale) return '<button class="folder sale" data-f="@sale"><span class="ic">'+svg24('tag',30)+'</span><b>'+esc(f.name)+'</b><span class="pc">'+svg24('pct',56)+'</span></button>'; return '<button class="folder" data-f="'+esc(f.id)+'"><span class="ic">'+(f.ic==='plaque'||f.ic==='trophy'?svg24(f.ic,24):svg(f.ic,24))+'</span><div><b>'+esc(f.name)+'</b><span class="n">'+f.n+' '+t('cnt')+'</span></div></button>'}).join('')+'</div>';
+  h+='<div class="folders">'+folderList().map(function(f){ if(f.sale) return '<button class="folder sale" data-f="@sale"><span class="ic">'+svg24('tag',30)+'</span><b>'+esc(f.name)+'</b><span class="pc">'+svg24('pct',56)+'</span></button>'; return '<button class="folder" data-f="'+esc(f.id)+'"><span class="ic">'+(f.ic==='plaque'||f.ic==='trophy'||f.ic==='medal'?svg24(f.ic,24):svg(f.ic,24))+'</span><div><b>'+esc(f.name)+'</b><span class="n">'+f.n+' '+t('cnt')+'</span></div></button>'}).join('')+'</div>';
   h+='<a class="contact" href="https://t.me/laser_point_uz" id="ct"><span class="ci"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></span><span><b>'+t('contact')+'</b><small>'+t('contactSub')+' · @laser_point_uz</small></span></a>';
   if(ME&&ME.staff) h+='<div class="mine"><button class="folder stf" data-v="staff"><span class="ic">'+svg24('manager',24)+'</span><div><b>'+t('stf')+'</b><span class="n">'+t('op')+' · '+t('unp')+'</span></div></button><button class="folder stf" id="svcb"><span class="ic">'+svg24('wrench',24)+'</span><div><b>'+(lang==='ru'?'Заказать услугу':'Xizmat buyurtmasi')+'</b><span class="n">'+(lang==='ru'?'Гравировка · UF':'Gravirovka · UF')+'</span></div></button>'+(ME.adm?'<button class="folder stf" data-v="stats"><span class="ic">📊</span><div><b>'+(lang==='ru'?'Статистика':'Statistika')+'</b><span class="n">'+(lang==='ru'?'клиенты · прибыль · товары':'mijozlar · foyda · tovarlar')+'</span></div></button>':'')+'</div>';
   var nb=ME&&ME.orders&&ME.orders.length, db=ME&&ME.debt>0, ab=ME&&!(ME.debt>0)&&ME.avans>0;
