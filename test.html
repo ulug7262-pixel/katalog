@@ -1,0 +1,783 @@
+<!doctype html>
+<html lang="uz"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Laser Point</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+:root{--bg:#EEF1F4;--surface:#FFFFFF;--ink:#17202B;--muted:#667385;--line:#DDE3EA;--accent:#2BD91F;--accent-ink:#06130A;--sale:#D8452A;--chip:#E4E9EF;--shadow:0 1px 2px rgba(23,32,43,.06),0 6px 18px rgba(23,32,43,.07);--f-head:'Space Grotesk','Inter',system-ui,sans-serif;--f-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F151C;--surface:#18212B;--ink:#E8EDF2;--muted:#8E9BAB;--line:#273340;--accent:#3DF02F;--accent-ink:#06130A;--sale:#FF7154;--chip:#222D39;--shadow:0 1px 2px rgba(0,0,0,.4);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0F151C;--surface:#18212B;--ink:#E8EDF2;--muted:#8E9BAB;--line:#273340;--accent:#3DF02F;--accent-ink:#06130A;--sale:#FF7154;--chip:#222D39;--shadow:0 1px 2px rgba(0,0,0,.4);color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button{font:inherit;color:inherit;cursor:pointer}
+.app{max-width:480px;margin:0 auto;padding-block:14px 40px;min-height:100vh}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.logo{width:38px;height:38px;border-radius:10px;background:var(--accent);display:grid;place-items:center;flex:none}
+.top h1{font:700 19px/1.1 var(--f-head);margin:0}
+.top small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.top .grow{flex:1;min-width:0}
+.lang{border:0;background:var(--chip);border-radius:9px;padding:7px 10px;font-weight:600;font-size:12.5px}
+.back{border:0;background:var(--chip);width:38px;height:38px;border-radius:10px;font-size:18px;flex:none}
+.search{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:12px 14px;font:inherit;margin-bottom:14px}
+.search:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h2{font:700 16px var(--f-head);margin:18px 0 10px}
+.folders{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.folder{border:0;text-align:left;background:var(--surface);border-radius:14px;padding:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;min-width:0}
+.folder .ic{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;background:var(--chip)}
+.folder b{font:600 15px var(--f-head);display:block;overflow-wrap:anywhere}
+.folder span.n{color:var(--muted);font-size:12.5px}
+.folder.sale{grid-column:1/-1;flex-direction:row;align-items:center;background:var(--sale);color:#fff}
+.folder.sale .ic{background:rgba(255,255,255,.2)}
+.folder.sale span.n{color:rgba(255,255,255,.88)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);text-align:left;border:0;padding:0;display:flex;flex-direction:column;min-width:0}
+.pic{aspect-ratio:1/1;position:relative;display:grid;place-items:center;background:var(--chip);overflow:hidden}
+.pic img{width:100%;height:100%;object-fit:cover;display:block}
+.pic .ph{width:40%;height:40%;opacity:.35}
+.badge{position:absolute;top:8px;left:8px;background:var(--sale);color:#fff;font:700 12px var(--f-head);padding:3px 8px;border-radius:7px}
+.badge.new{background:var(--accent);color:var(--accent-ink)}
+.badge.two{top:34px}
+.out{position:absolute;inset:0;background:rgba(0,0,0,.45);color:#fff;display:grid;place-items:center;font-weight:600}
+.mc{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;font-size:11.5px;padding:2px 7px;border-radius:99px}
+.info{padding:10px 11px 12px;display:flex;flex-direction:column;gap:4px}
+.name{font-weight:500;font-size:14px;line-height:1.25;overflow-wrap:anywhere}
+.price{font:700 15px var(--f-head);font-variant-numeric:tabular-nums}
+.old{color:var(--muted);text-decoration:line-through;font:400 12.5px var(--f-body);margin-left:6px}
+.stock{font-size:12px;color:var(--muted)}
+.stock.low{color:var(--sale)}
+.empty{color:var(--muted);text-align:center;padding:40px 10px}
+.empty button{margin-top:12px;border:0;background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:10px 16px;font-weight:600}
+.scrim{position:fixed;inset:0;background:rgba(10,15,20,.5);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.scrim.on{display:flex}
+.sheet{background:var(--surface);width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));max-height:94vh;overflow:auto}
+.sheet h3{font:700 19px var(--f-head);margin:0 0 4px;overflow-wrap:anywhere}
+.close{float:right;border:0;background:var(--chip);width:32px;height:32px;border-radius:9px;font-size:16px;margin:0 0 8px 8px}
+.gal{position:relative;margin-bottom:12px;border-radius:14px;overflow:hidden;background:var(--chip);clear:both}
+.track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.track::-webkit-scrollbar{display:none}
+.slide{flex:0 0 100%;scroll-snap-align:center;aspect-ratio:4/3;position:relative;display:grid;place-items:center;overflow:hidden;cursor:zoom-in}
+.slide img{width:100%;height:100%;object-fit:contain;display:block}
+.slide iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.cnt{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;padding:3px 9px;border-radius:99px}
+.dots{position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:6px;pointer-events:none}
+.dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.65);box-shadow:0 0 2px rgba(0,0,0,.4)}
+.dots i.on{background:#fff;width:18px;border-radius:5px}
+.vid{background:#0e1318;color:#fff;cursor:pointer}
+.play{width:62px;height:62px;border-radius:50%;background:rgba(255,255,255,.2);display:grid;place-items:center;border:2px solid #fff;position:relative;z-index:1}
+.play:before{content:"";border-left:18px solid #fff;border-top:11px solid transparent;border-bottom:11px solid transparent;margin-left:5px}
+.vid img{position:absolute;inset:0;opacity:.55;object-fit:cover}
+.tag{position:absolute;top:10px;left:10px;background:var(--accent);color:var(--accent-ink);font:700 11px var(--f-head);padding:3px 8px;border-radius:6px;z-index:1}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--chip);border-radius:11px;padding:3px;margin:14px 0}
+.seg button{border:0;background:transparent;padding:10px 6px;border-radius:9px;font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--surface);box-shadow:var(--shadow);font-weight:600}
+.big{font:700 26px var(--f-head);font-variant-numeric:tabular-nums}
+.cta{width:100%;border:0;background:var(--accent);color:var(--accent-ink);border-radius:13px;padding:14px;font:600 16px var(--f-body);margin-top:14px}
+.cta[disabled]{opacity:.5}
+.note{color:var(--muted);font-size:12.5px;margin-top:10px}
+.desc{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);color:var(--ink);font-size:14px;line-height:1.5;white-space:pre-line;overflow-wrap:anywhere}
+.desc.cl{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.more{border:0;background:none;color:var(--muted);font-weight:600;font-size:13px;padding:6px 0 0}
+.zoom{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:40;display:none;place-items:center}
+.zoom.on{display:grid}
+.zoom img{max-width:96vw;max-height:88vh;object-fit:contain}
+.zoom p{position:absolute;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;color:#fff;font-size:13px;margin:0}
+.logo2{flex:none;line-height:0}
+.tel a{color:var(--muted);text-decoration:none;display:block;font-variant-numeric:tabular-nums;font-size:12.5px}
+.hello{font-size:16px;margin:2px 2px 12px}.hello b{font-family:var(--f-head)}
+.contact{display:flex;align-items:center;gap:12px;margin-top:10px;padding:14px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow);text-decoration:none;color:var(--ink)}
+.contact .ci{width:40px;height:40px;border-radius:11px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;flex:none}
+.contact b{display:block;font:600 15px var(--f-head)}.contact small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;overflow-wrap:anywhere}
+.prs{display:grid;grid-auto-flow:column;grid-template-rows:auto auto auto;column-gap:8px;margin-top:2px;font-size:11.5px;color:var(--muted);line-height:1.25}
+.pr{display:contents}
+.pr>span:first-child{align-self:end}
+.pr .price{font-size:14px;color:var(--ink);display:block;white-space:nowrap;font:700 14px var(--f-head)}
+.pr .old{display:block;margin:0;font-size:11.5px;white-space:nowrap;text-decoration:line-through}
+@media (max-width:389px){.info{padding-left:9px;padding-right:9px}.prs{font-size:10.5px}.pr .price{font-size:13px}.pr .old{font-size:10.5px}}
+.load{text-align:center;color:var(--muted);padding:80px 10px}
+@media (prefers-reduced-motion:no-preference){.card,.folder{transition:transform .12s}.card:active,.folder:active{transform:scale(.98)}}
+.ord h4{font:700 16px var(--f-head);margin:14px 0 8px}
+.ord .row{display:flex;align-items:center;gap:10px}
+.ord .stp{display:flex;align-items:center;background:var(--chip);border-radius:12px;overflow:hidden}
+.ord .stp button{border:0;background:none;width:46px;height:46px;font-size:22px;font-weight:700;color:inherit}
+.ord .stp input{border:0;background:none;width:70px;text-align:center;font:700 18px var(--f-head);color:inherit;outline:0}
+.ord .opt{display:block;width:100%;text-align:left;border:2px solid transparent;background:var(--chip);border-radius:12px;padding:13px 14px;margin:0 0 8px;font:600 15px var(--f-head);color:inherit}
+.ord .opt[aria-pressed=true]{border-color:var(--accent)}
+.ord .q{color:var(--muted);font-size:13px;white-space:pre-line;margin:0 0 10px}
+.ord .sum{background:var(--chip);border-radius:12px;padding:12px 14px;margin:0 0 10px;line-height:1.7}
+.ord .sum b{font-family:var(--f-head)}
+.ord .msg{background:var(--chip);border-radius:12px;padding:12px 14px;margin:10px 0;white-space:pre-line}
+.ord .sec{background:none;border:0;color:var(--muted);width:100%;padding:12px;font-weight:600}
+.ord .fi{width:100%;box-sizing:border-box;border:2px solid transparent;background:var(--chip);border-radius:12px;padding:13px 14px;font:600 16px var(--f-head);color:inherit;outline:0}
+.ord .fi:focus{border-color:var(--accent)}
+.mine{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.mine .folder{margin:0}.mine .folder.one{grid-column:1/-1}
+.folder.debt{background:var(--sale);color:#fff}.folder.debt .ic{background:rgba(255,255,255,.2)}.folder.debt span.n{color:rgba(255,255,255,.92);font:700 15px var(--f-head)}
+.ord1{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:13px 14px;margin:0 0 10px}
+.ord1 .r1{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.ord1 b{font:600 15px var(--f-head);overflow-wrap:anywhere}
+.ord1 .sm{color:var(--muted);font-size:12.5px;margin-top:3px}
+.ord1 .sum{font:700 15px var(--f-head);white-space:nowrap}
+.chip{display:inline-block;font:600 11.5px var(--f-head);padding:3px 9px;border-radius:99px;background:var(--chip);margin-top:8px}
+.chip.book{background:#F4B93A;color:#2b1d00}.chip.debt{background:var(--sale);color:#fff}.chip.done{background:var(--accent);color:var(--accent-ink)}
+.bigdebt{background:var(--sale);color:#fff;border-radius:18px;padding:26px 20px;text-align:center;margin-top:14px}
+.bigdebt small{display:block;opacity:.9;font-size:14px}.bigdebt div{font:700 34px var(--f-head);margin-top:8px;overflow-wrap:anywhere}
+.stf{background:var(--accent);color:#000}.stf b{color:#000}.stf .ic{background:rgba(0,0,0,.12)!important;color:#000}.stf span.n{color:rgba(0,0,0,.72)!important}
+.tabs{display:flex;gap:8px;margin:12px 0}.tabs button{flex:1;border:0;background:var(--chip);border-radius:12px;padding:11px 8px;font:600 14px var(--f-head);color:inherit}.tabs button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.so{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:13px 14px;margin:0 0 10px}
+.so .h{display:flex;justify-content:space-between;gap:8px}.so .h b{font:600 15px var(--f-head)}.so .id{color:var(--muted);font-size:12.5px}
+.so .ec{display:inline-block;margin-top:8px;padding:5px 11px;border-radius:999px;font-size:13px;font-weight:700;background:var(--chip);color:var(--ink)}.so .ec.y{background:var(--accent);color:var(--accent-ink)}.so .ec.b{background:#FFE9B8;color:#6b4a00}.so .cu{margin-top:6px;font-size:13.5px}.so .cu a{color:inherit}
+.so .bt{display:flex;gap:8px;margin-top:10px}.so .bt button{flex:1;border:0;border-radius:11px;padding:11px 6px;font:600 14px var(--f-head);background:var(--accent);color:var(--accent-ink)}
+.so .bt button.no{background:var(--chip);color:var(--sale)}
+.so .bt{flex-wrap:wrap}.so .bt button.ed{flex:1 1 100%;background:var(--chip);color:var(--ink)}.pick button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.pick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 10px}.pick button{border:0;border-radius:12px;background:var(--chip);padding:16px 8px;font:600 15px var(--f-head);color:inherit}
+.ph1{display:block;width:100%;border:2px dashed var(--line);border-radius:14px;padding:26px 10px;text-align:center;color:var(--muted);margin:8px 0;background:none;font:600 15px var(--f-head)}
+.ph1 img{max-width:100%;max-height:220px;border-radius:10px;display:block;margin:0 auto}
+.cl{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}.cl a{display:inline-flex;align-items:center;gap:6px;background:var(--chip);color:inherit;text-decoration:none;border-radius:10px;padding:8px 11px;font:600 13.5px var(--f-head)}.cl a.tg{background:#2AABEE;color:#fff}
+:root{--accent-soft:#DDF5DA;--good:#139C0C;--staff:#2F5BEA;--staff-soft:#E4EBFD;--sale-soft:#FBE4DE;--ph:#11171c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--accent-soft:#17301b;--good:#3DF02F;--staff:#5B86FF;--staff-soft:#1b2a52;--sale-soft:#3a1f19}}
+:root[data-theme="dark"]{--accent-soft:#17301b;--good:#3DF02F;--staff:#5B86FF;--staff-soft:#1b2a52;--sale-soft:#3a1f19}
+.folder .ic{background:var(--accent-soft);color:var(--good)}
+.folder .ic.av,.av1{background:#0b0f0c;color:#3DF02F;border-radius:50%}
+.av1{width:38px;height:38px;display:grid;place-items:center;flex:none}
+.ord1 .r1{align-items:center}
+.folder.sale{grid-column:1/-1;flex-direction:row;align-items:center;gap:12px;position:relative;overflow:hidden;color:#fff;background:linear-gradient(100deg,#0d2a14 0%,#14451c 48%,#1f7a2a 100%);border:1px solid rgba(60,220,70,.35);padding:16px;min-height:64px}
+.folder.sale .ic{background:none;color:#4cf04a;width:auto;height:auto}
+.folder.sale b{font:600 20px var(--f-head)}
+.folder.sale .pc{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#4cf04a;opacity:.9;line-height:0}
+.folder.debt{background:var(--surface);color:var(--ink)}.folder.debt .ic{background:var(--sale-soft)!important;color:var(--sale)}.folder.debt span.n{color:var(--sale)}
+.folder.avn .ic{background:var(--accent-soft);color:var(--good)}.folder.avn span.n{color:var(--good);font:700 15px var(--f-head)}
+.bigdebt.cu{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.bigdebt.cu>div{color:var(--sale)}.bigdebt.cu.av>div{color:var(--good)}
+.bigdebt.cu .bi{display:inline-grid;place-items:center;width:52px;height:52px;border-radius:15px;background:var(--sale-soft);color:var(--sale);margin-bottom:8px}
+.bigdebt.cu.av .bi{background:var(--accent-soft);color:var(--good)}
+.bigdebt.cu .sm{font-size:13px;color:var(--muted);margin-top:4px}
+.stf{background:var(--staff)!important;color:#fff!important}.stf b{color:#fff!important}.stf .ic{background:rgba(255,255,255,.18)!important;color:#fff!important}.stf span.n{color:rgba(255,255,255,.82)!important}
+.smode{--accent:var(--staff);--accent-ink:#fff}
+.pic{aspect-ratio:4/5;background:var(--ph)}
+.pic img{object-fit:contain}
+.slide{aspect-ratio:4/5;background:var(--ph)}
+.slide video,.slide iframe{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border:0;background:#000}
+.pp{display:grid;grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr);gap:8px;border-top:1px solid var(--line);padding-top:8px;margin-top:4px}
+.pp.one{grid-template-columns:minmax(0,1fr)}
+.pp .vl{background:var(--line)}
+.pp small{display:block;color:var(--muted);font-size:11px;line-height:1.25}
+.pp b{display:block;font:700 14px var(--f-head);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pp b i{font:500 11px var(--f-body);font-style:normal;color:var(--muted)}
+.pp s{display:block;color:var(--muted);font-size:11px}
+.pp.big{gap:14px;padding:14px 0 4px;margin-top:12px}
+.pp.big small{font-size:13px;margin-bottom:2px}.pp.big b{font-size:21px}.pp.big b i{font-size:14px}.pp.big s{font-size:13px}
+@media (max-width:389px){.pp b{font-size:13px}.pp small{font-size:10.5px}}
+.shd{display:flex;align-items:center;gap:8px;margin-bottom:8px}.shd .grow{flex:1}.shd .close{float:none;margin:0}.shd .back{width:32px;height:32px;border-radius:9px;font-size:16px}
+.scrim{top:0;bottom:auto;height:var(--vh,100%)}
+.sheet{max-height:calc(var(--vh,100vh) - 8px)}
+.ord .cta{position:sticky;bottom:0;z-index:2;box-shadow:0 -10px 14px var(--surface)}
+.zoom.on{display:block}
+.zoom .ztr{position:absolute;inset:0;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+.zoom .ztr::-webkit-scrollbar{display:none}
+.zoom .zs{flex:0 0 100%;height:100%;scroll-snap-align:center;display:grid;place-items:center}
+.zoom .zs img,.zoom .zs video,.zoom .zs iframe{max-width:100vw;max-height:84vh;object-fit:contain;border:0}
+.zoom .zs iframe{width:100vw;height:70vh}
+.zx{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.16);color:#fff;font-size:18px;z-index:2}
+.zc{position:absolute;top:calc(20px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);background:rgba(0,0,0,.5);color:#fff;font-size:13px;padding:3px 10px;border-radius:99px;z-index:2}
+.za{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;border:0;background:rgba(255,255,255,.16);color:#fff;font-size:24px;z-index:2}
+.za.l{left:10px}.za.r{right:10px}
+.zoom .zd{bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+</style></head><body>
+<div class="app" id="app"><div class="load">…</div></div>
+<div class="scrim" id="scrim"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+<div class="zoom" id="zoom"><img id="zimg" alt=""><p id="zp"></p></div>
+<script>
+var T={
+ uz:{stf:'Menejer paneli',op:'Ochiq buyurtmalar',unp:'To‘lanmagan',myo:'Mening buyurtmalarim',debt:'Qarzdorlik',tdebt:'Umumiy qarzdorlik',noo:'Hozircha buyurtmalar yo‘q',sNew:'Qabul qilindi',sDone:'Bajarildi',sBook:'Bron',sDebt:'Qarz',search:'Tovar qidirish',sale:'Chegirmalar',news:'Yangi kelgan mahsulotlar',all:'Statuetkalar',cnt:'ta tovar',disc:'Tovarlar',none:'Hech narsa topilmadi',back:'Orqaga',
+     sum:'so‘m',soldout:'Tugagan',gone:'Hozircha qolmagan',inst:'Omborda',last:'Oxirgi',pcs:'ta',avail:'Mavjud',plain:'Gravirovkasiz',engr:'Gravirovka bilan',
+     order:'Buyurtma berish',oQty:'Miqdori',oEngr:'Gravirovka',oTot:'Jami',oChk:'Buyurtmani tekshiring',oConf:'Tasdiqlash',oEdit:'O‘zgartirish',oBack:'Katalogga qaytish',oBot:'Botni ochish',oWait:'Yuborilmoqda…',oProd:'Tovar',oBookNote:'⏳ Bron muddati: {u} gacha (maksimum 48 soat). Shu vaqt ichida tasdiqlanmasa, bron avtomatik bekor bo‘ladi.',oReg:'Buyurtma berish uchun botda bir marta ro‘yxatdan o‘ting.',oNet:'Aloqa xatosi. Qayta urinib ko‘ring.',oNext:'Davom etish',note2:'',note:'Tugma sizni bot ichidagi buyurtma jarayoniga olib boradi: miqdor, gravirovka matni, bron.',video:'VIDEO',vtap:'Bosing, video o‘ynaydi',
+     hi:'Xush kelibsiz',contact:'Menejer bilan bog‘lanish',contactSub:'Savol bormi? Telegramda yozing',close:'Yopish uchun bosing',err:'Katalogni yuklab bo‘lmadi',retry:'Qayta urinish',nw:'Yangi',min:'Minimal buyurtma',more:'Batafsil',less:'Yig‘ish'},
+ ru:{stf:'Панель менеджера',op:'Открытые заказы',unp:'Не оплачено',myo:'Мои заказы',debt:'Задолженность',tdebt:'Общая задолженность',noo:'Заказов пока нет',sNew:'Принят',sDone:'Выполнен',sBook:'Бронь',sDebt:'В долг',search:'Поиск товара',sale:'Скидки',news:'Новые поступления',all:'Статуэтки',cnt:'шт.',disc:'Товары',none:'Ничего не найдено',back:'Назад',
+     sum:'сум',soldout:'Нет в наличии',gone:'Сейчас нет в наличии',inst:'На складе',last:'Последние',pcs:'шт.',avail:'В наличии',plain:'Без гравировки',engr:'С гравировкой',
+     order:'Заказать',oQty:'Количество',oEngr:'Гравировка',oTot:'Итого',oChk:'Проверьте заказ',oConf:'Подтвердить',oEdit:'Изменить',oBack:'Вернуться в каталог',oBot:'Открыть бота',oWait:'Отправка…',oProd:'Товар',oBookNote:'⏳ Бронь действует до {u} (максимум 48 часов). Если за это время заказ не подтвердят, бронь снимется автоматически.',oReg:'Чтобы заказать, один раз зарегистрируйтесь в боте.',oNet:'Ошибка связи. Попробуйте ещё раз.',oNext:'Далее',note2:'',note:'Кнопка откроет оформление заказа в боте: количество, текст гравировки, бронь.',video:'ВИДЕО',vtap:'Нажмите, чтобы смотреть',
+     hi:'Добро пожаловать',contact:'Связаться с менеджером',contactSub:'Есть вопрос? Напишите в Telegram',close:'Нажмите, чтобы закрыть',err:'Не удалось загрузить каталог',retry:'Повторить',nw:'Новинка',min:'Мин. заказ',more:'Подробнее',less:'Свернуть'}
+};
+var API='https://script.google.com/macros/s/AKfycbweHcoeu85aKccylwbtPehd_NENjnoN4nghM24F-hFM6qidgSV78EoRkx7w7hLfqebG4A/exec';
+var RAND=[], USERNAME='', ME=null;
+function shuffle10(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a.slice(0,10)}
+var lang='uz', tg=window.Telegram&&window.Telegram.WebApp, DATA=null, state={folder:null,q:''};
+try{ var sv=localStorage.getItem('lp_lang'); if(sv) lang=sv; else if(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user&&tg.initDataUnsafe.user.language_code==='ru') lang='ru' }catch(e){}
+try{ if(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user) USERNAME=tg.initDataUnsafe.user.first_name||'' }catch(e){}
+try{ if(tg){ tg.ready(); tg.expand(); if(tg.colorScheme) document.documentElement.setAttribute('data-theme',tg.colorScheme) } }catch(e){}
+var $=function(i){return document.getElementById(i)};
+var t=function(k){return T[lang][k]};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+var fmt=function(n){return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,' ')+' '+t('sum')};
+var IC={
+ tag:'<path d="M8 32V10h22l26 26-22 22z"/><circle cx="20" cy="22" r="3"/>',
+ star:'<path d="M32 8l7 15 16 2-12 11 3 16-14-8-14 8 3-16L9 25l16-2z"/>',
+ folder:'<path d="M6 16a4 4 0 0 1 4-4h14l6 7h24a4 4 0 0 1 4 4v25a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4z"/>',
+ all:'<rect x="8" y="8" width="20" height="20" rx="4"/><rect x="36" y="8" width="20" height="20" rx="4"/><rect x="8" y="36" width="20" height="20" rx="4"/><rect x="36" y="36" width="20" height="20" rx="4"/>',
+ trophy:'<path d="M20 8h24v18a12 12 0 0 1-24 0z"/><path d="M20 14h-9v4a9 9 0 0 0 9 9M44 14h9v4a9 9 0 0 1-9 9"/><path d="M32 38v10M24 56h16M27 48h10"/>',
+ frame:'<rect x="10" y="12" width="44" height="40" rx="4"/><rect x="18" y="20" width="28" height="24" rx="2"/><path d="M18 40l8-8 6 6 6-8 8 10"/>',
+ ph:'<rect x="8" y="12" width="48" height="40" rx="5"/><circle cx="23" cy="26" r="5"/><path d="M8 46l14-12 10 8 8-8 16 14"/>'
+};
+var svg=function(k,s){return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+IC[k]+'</svg>'};
+
+var IC24={
+ tag:'<path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7a1 1 0 0 1 .7.3l7.6 7.6a1 1 0 0 1 0 1.4l-7.7 7.7a1 1 0 0 1-1.4 0L3.8 12.9a1 1 0 0 1-.3-.7z"/><circle cx="8" cy="8" r="1.4"/>',
+ pct:'<path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.6"/><circle cx="17" cy="17" r="2.6"/>',
+ trophy:'<path d="M8 3.5h8v6a4 4 0 0 1-8 0z"/><path d="M8 5.5H5v1.5a3 3 0 0 0 3 3"/><path d="M16 5.5h3v1.5a3 3 0 0 1-3 3"/><path d="M12 13.5v3.5"/><path d="M8.5 20.5v-1.5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v1.5z"/>',
+ plaque:'<path d="M7.5 2.5h9l3 3v13l-3 3h-9l-3-3v-13z"/><path d="M8 6h8v9H8z"/><path d="M12 7.7l.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3z"/><path d="M9.5 18h5"/>',
+ user:'<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
+ manager:'<circle cx="12" cy="7.5" r="3.5"/><path d="M5 20.5v-1.2a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1.2"/><path d="M12 14.5l-1.3 1.6 1.3 3.6 1.3-3.6z"/>',
+ hands:'<circle cx="12" cy="6" r="3"/><path d="M12 4.7v2.6M10.9 5.4h2.2"/><path d="M2.5 14.5h3.2l3.1-1.6h3.6a1.5 1.5 0 0 1 0 3H9.4"/><path d="M12.4 16l1.6-.6 3.5-1.7a1.5 1.5 0 0 1 1.5 2.6L14.6 20H7.8L5.7 18.2"/><path d="M2.5 13v7.5"/>',
+ wrench:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>'
+};
+var svg24=function(k,s){return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+IC24[k]+'</svg>'};
+
+function load(){
+ var cached=null; try{ var cs=localStorage.getItem('lp_cat'); if(cs) cached=JSON.parse(cs) }catch(e){}
+ if(!DATA&&!cached) $('app').innerHTML='<div class="load">…</div>';
+ loadMe();
+ var ok=function(d,fromCache){
+  var was=DATA; DATA=d;
+  if(RAND.length){ var ids={}; d.products.forEach(function(x){ids[x.id]=x}); RAND=RAND.map(function(x){return ids[x.id]}).filter(function(x){return x&&x.qty>0}) }
+  if(RAND.length<4) RAND=shuffle10(d.products.filter(function(x){return x.qty>0}));
+  if(!fromCache){ try{ localStorage.setItem('lp_cat',JSON.stringify(d)) }catch(e){} }
+  if(!was){ render(); return }
+  if(!state.view&&!$('scrim').classList.contains('on')&&document.activeElement!==$('q')){ var y=window.scrollY; render(); window.scrollTo(0,y) }
+ };
+ if(cached&&!DATA) ok(cached,true);
+ if(window.google&&google.script&&google.script.run){ google.script.run.withSuccessHandler(function(d){ok(d,false)}).withFailureHandler(function(){ if(!DATA) fail() }).getCatalog(); return }
+ fetch(API+'?api=1').then(function(r){return r.json()}).then(function(d){ok(d,false)}).catch(function(){ if(!DATA) fail() });
+}
+function fail(){ $('app').innerHTML='<div class="empty">'+t('err')+'<br><button id="rt">'+t('retry')+'</button></div>'; $('rt').onclick=load }
+
+function vis(){ var P=DATA.products; return (ME&&ME.staff)?P:P.filter(function(x){return x.qty>0}) }
+function catName(f){ return lang==='ru'?({Statuetkalar:'Статуэтки',Plaketkalar:'Плакетки'}[f]||f):f }
+function folderList(){
+ var P=vis(), out=[];
+ var sale=P.filter(function(x){return x.old||x.oldE}), nw=P.filter(function(x){return x.isNew});
+ if(sale.length) out.push({id:'@sale',name:t('sale'),sale:true,n:sale.length});
+ if(nw.length) out.push({id:'@new',name:t('news'),ic:'star',n:nw.length});
+ var names=(DATA.cats||[]).slice();
+ P.forEach(function(x){(x.folders||[]).forEach(function(f){ if(names.indexOf(f)<0) names.push(f) })});
+ names.forEach(function(f){ var n=P.filter(function(x){return (x.folders||[]).indexOf(f)>=0}).length; if(n) out.push({id:f,name:catName(f),ic:/plaket|плакет/i.test(f)?'plaque':/statu|статуэт/i.test(f)?'trophy':'folder',n:n}) });
+ return out;
+}
+function inFolder(x,id){ if(id==='@all') return true; if(id==='@sale') return !!(x.old||x.oldE); if(id==='@new') return !!x.isNew; return (x.folders||[]).indexOf(id)>=0 }
+function num(n){return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,' ')}
+function prices(x,big){
+ var cols=[];
+ if(x.price) cols.push({l:t('plain'),p:x.price,o:x.old});
+ if(x.priceE) cols.push({l:t('engr'),p:x.priceE,o:x.oldE});
+ return '<div class="pp'+(big?' big':'')+(cols.length>1?'':' one')+'">'+cols.map(function(c,i){return (i?'<span class="vl"></span>':'')+'<div><small>'+c.l+'</small><b>'+num(c.p)+'<i> '+t('sum')+'</i></b>'+(c.o?'<s>'+num(c.o)+'</s>':'')+'</div>'}).join('')+'</div>';
+}
+function discPct(x){ var a=x.old?1-x.price/x.old:0, b=x.oldE?1-x.priceE/x.oldE:0; return Math.round(Math.max(a,b)*100) }
+function card(x){
+ var out=x.qty<=0, low=x.qty>0&&x.qty<=5, pct=discPct(x), media=x.photos.length+(x.video?1:0);
+ return '<button class="card" data-id="'+esc(x.id)+'"><div class="pic">'+(x.photos[0]?'<img loading="lazy" src="'+esc(x.photos[0])+'" alt="">':'<span class="ph">'+svg('ph',64)+'</span>')+
+ (pct>0?'<span class="badge">−'+pct+'%</span>':'')+(x.isNew?'<span class="badge new'+(pct>0?' two':'')+'">'+t('nw')+'</span>':'')+
+ (out?'<span class="out">'+t('soldout')+'</span>':'')+(media>1?'<span class="mc">'+(x.video?'▶ ':'▣ ')+media+'</span>':'')+'</div>'+
+ '<div class="info"><div class="name">'+esc(x.name)+'</div>'+prices(x)+
+ '<div class="stock'+(low?' low':'')+'">'+(out?t('gone'):low?t('last')+' '+x.qty+' '+t('pcs'):t('avail')+': '+x.qty+' '+t('pcs'))+'</div></div></button>';
+}
+function langBtn(){ return '<button class="lang" id="lg">'+(lang==='uz'?'RU':'UZ')+'</button>' }
+var ME_KEY='';
+try{ var uid0=tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user&&tg.initDataUnsafe.user.id; if(uid0){ ME_KEY='lp_me_'+uid0; var c0=localStorage.getItem(ME_KEY); if(c0) ME=JSON.parse(c0) } }catch(e){}
+function meChanged(){ if(!DATA) return; if(state.view==='orders'||state.view==='debt'){ renderView(); return } if(!state.view&&!$('scrim').classList.contains('on')&&document.activeElement!==$('q')){ var y=window.scrollY; render(); window.scrollTo(0,y) } }
+function loadMe(){
+ var init=(tg&&tg.initData)||''; if(!init) return;
+ api({act:'who',d:init},function(r){ if(r&&r.ok){ var ch=!ME||!!ME.staff!==!!r.staff||!!ME.adm!==!!r.adm; ME=Object.assign(ME||{orders:[],debt:0,avans:0},{staff:r.staff,adm:r.adm}); if(ch) meChanged() } });
+ api({act:'my',d:init},function(r){ if(r&&r.ok){ ME=r; try{ if(ME_KEY) localStorage.setItem(ME_KEY,JSON.stringify(r)) }catch(e){} meChanged() } });
+}
+function engChip(o){ var e=String(o.engr||'').trim(); if(!e) return ''; var y=e.indexOf('С гравировкой')===0, b=!!o.book; return '<div class="ec '+(y?'y':b?'b':'n')+'">'+(y?'✍️ ':'')+esc(engLbl(e))+'</div>' }
+function engLbl(e){ if(lang==='ru') return e; return {'Без гравировки':'Gravirovkasiz','С гравировкой':'Gravirovka bilan','⏳ Бронь':'⏳ Bron','Бронь':'⏳ Bron'}[e]||e }
+function renderView(){
+ $('app').classList.remove('smode');
+ if(state.view==='staff'){ renderStaff(); return }
+ if(state.view==='stats'){ renderStats(); return }
+ lg(state.view==='debt'?'Qarz bolimini korildi':'Buyurtmalar bolimini korildi','');
+ var ru=lang==='ru', h='<div class="top"><button class="back" id="back" aria-label="'+t('back')+'">←</button><div class="grow"><h1>'+t(state.view==='debt'?'debt':'myo')+'</h1></div>'+langBtn()+'</div>';
+ var debtBox=function(st){ return '<div class="bigdebt cu"'+(st?' style="'+st+'"':'')+'><span class="bi">'+svg24('hands',30)+'</span><small>'+t('tdebt')+'</small><div>'+fmt(ME&&ME.debt||0)+'</div>'+(ME&&ME.company?'<div class="sm">🏢 '+esc(ME.company)+'</div>':'')+'</div>' };
+ var avBox=function(st){ return '<div class="bigdebt cu av"'+(st?' style="'+st+'"':'')+'><span class="bi">'+svg24('hands',30)+'</span><small>'+(ru?'Аванс (предоплата)':'Avans (oldindan to‘lov)')+'</small><div>+'+fmt(ME.avans)+'</div></div>' };
+ if(state.view==='debt'){
+  if(ME&&ME.avans>0&&!(ME.debt>0)) h+=avBox(); else { h+=debtBox(); if(ME&&ME.avans>0) h+=avBox('margin-top:12px') }
+  if(ME&&ME.paid>0) h+='<div class="sm" style="text-align:center;color:var(--muted);margin:10px 0 0">'+(ru?'Всего в долг: ':'Jami qarz: ')+fmt(ME.gross)+' · '+(ru?'оплачено: ':'to‘langan: ')+fmt(ME.paid)+'</div>';
+  var DL=((ME&&ME.orders)||[]).filter(function(o){return o.st==='debt'});
+  if(DL.length) h+='<div style="margin:16px 0 8px;font:700 15px var(--f-head)">'+(ru?'Заказы в долг':'Qarzga olingan buyurtmalar')+'</div>';
+  DL.forEach(function(o){ h+='<div class="ord1"><div class="r1"><div><b>'+esc(o.name)+'</b><div class="sm">'+esc(o.qty)+' '+t('pcs')+' · '+esc(o.date)+'</div>'+(o.by?'<div class="sm">👤 '+esc(o.by)+'</div>':'')+'</div><div class="sum">'+(o.amt?fmt(o.amt):'')+'</div></div></div>' });
+ } else {
+  var L=(ME&&ME.orders)||[];
+  if(ME&&ME.debt>0) h+=debtBox('margin:0 0 12px'); else if(ME&&ME.avans>0) h+=avBox('margin:0 0 12px');
+  if(!L.length) h+='<div class="empty">'+t('noo')+'</div>';
+  L.forEach(function(o){
+   var st={book:t('sBook'),debt:t('sDebt'),done:t('sDone'),'new':t('sNew')}[o.st]||t('sNew');
+   h+='<div class="ord1"><div class="r1"><span class="av1">'+svg24('user',22)+'</span><div style="flex:1;min-width:0"><b>'+esc(o.name)+'</b><div class="sm">'+esc(o.qty)+' '+t('pcs')+(o.engr?' · '+esc(engLbl(o.engr)):'')+' · '+esc(o.date)+'</div>'+(o.by?'<div class="sm">👤 '+esc(o.by)+'</div>':'')+'</div><div class="sum">'+(o.sum?fmt(o.sum):'')+'</div></div><span class="chip '+esc(o.st)+'">'+st+'</span></div>';
+  });
+ }
+ $('app').innerHTML=h; window.scrollTo(0,0);
+ $('back').onclick=function(){ state.view=null; render() };
+ $('lg').onclick=function(){ lang=lang==='uz'?'ru':'uz'; try{localStorage.setItem('lp_lang',lang)}catch(e){}; render() };
+}
+
+var SF={tab:'open',list:null};
+function sapi(act,params,cb){ params.act=act; params.d=(tg&&tg.initData)||''; api(params,cb) }
+function sTop(title,backFn){
+ $('app').classList.add('smode');
+ $('app').innerHTML='<div class="top"><button class="back" id="back">←</button><div class="grow"><h1>'+esc(title)+'</h1></div>'+langBtn()+'</div><div id="sb"></div>';
+ $('back').onclick=backFn; $('lg').onclick=function(){ lang=lang==='uz'?'ru':'uz'; try{localStorage.setItem('lp_lang',lang)}catch(e){}; renderStaff() };
+}
+function renderStaff(){
+ sTop(t('stf'),function(){ state.view=null; render() });
+ var sb=$('sb'); sb.innerHTML='<div class="load">…</div>';
+ sapi('sl',{},function(r){ if(!r.ok){ sb.innerHTML='<div class="empty">'+esc(r.msg||t('oNet'))+'</div>'; return } SF.list=r; drawStaff() });
+}
+function contactInfo(o){ var txt=String(o.cust||''), un='', ph='';
+ if(o.fw){ var m=txt.match(/@([A-Za-z0-9_]{4,})/); if(m) un=m[1]; var d=(String(o.phone||'')+' '+txt).match(/\+?\d[\d\s().-]{7,}\d/); if(d) ph=d[0].replace(/[^\d+]/g,'') }
+ else { un=o.tgu||''; ph=String(o.phone||'').replace(/[^\d+]/g,'') }
+ var dg=ph.replace(/\D/g,''), tgl=un?'https://t.me/'+un:(dg?'https://t.me/+'+dg:'');
+ return {tg:tgl,tel:ph.length>=7?ph:''} }
+var TGSVG='<svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M21.9 3.4 2.6 10.9c-1.3.5-1.3 1.3-.2 1.6l4.9 1.5 1.9 5.8c.2.6.1.9.8.9.5 0 .8-.2 1.1-.5l2.4-2.3 4.9 3.6c.9.5 1.5.2 1.8-.8l3.2-15.2c.3-1.3-.5-1.9-1.5-1.1zM8.4 13.2l9.8-6.2c.5-.3.9-.1.5.2l-8.1 7.3-.3 3.4z"/></svg>';
+function contactHtml(o){ var c=contactInfo(o); if(!c.tg&&!c.tel) return '';
+ return '<div class="cl">'+(c.tg?'<a class="tg" href="'+esc(c.tg)+'" data-tg="1">'+TGSVG+' Telegram</a>':'')+(c.tel?'<a href="tel:'+esc(c.tel)+'" data-tel="1">📞 '+esc(c.tel)+'</a>':'')+'</div>' }
+function tgLink(o){ if(o.tgu) return 'https://t.me/'+o.tgu; var d=String(o.phone||'').replace(/\D/g,''); return d?'https://t.me/+'+d:'https://t.me/' }
+function drawStaff(){
+ var r=SF.list||{open:[],debt:[],total:0}, sb=$('sb');
+ var h='<div class="tabs"><button id="t1" aria-pressed="'+(SF.tab==='open')+'">'+t('op')+' ('+r.open.length+')</button><button id="t2" aria-pressed="'+(SF.tab==='debt')+'">'+t('unp')+' ('+r.debt.length+')</button>'+(ME&&ME.adm?'<button id="t3" aria-pressed="'+(SF.tab==='co')+'">'+(lang==='ru'?'Должники':'Qarzdorlar')+'</button>':'')+'</div>';
+ if(SF.tab==='debt') h+='<div class="bigdebt" style="margin:0 0 12px;padding:16px"><small>'+t('tdebt')+'</small><div style="font-size:26px">'+fmt(r.total)+'</div></div>';
+ if(SF.tab==='co'){ drawCo(h); return }
+ var L=SF.tab==='debt'?r.debt:r.open;
+ if(!L.length) h+='<div class="empty">—</div>';
+ L.forEach(function(o,i){
+  var bt='';
+  if(SF.tab==='debt') bt='<button data-a="pay" data-i="'+i+'">'+(lang==='ru'?'💵 Принять оплату':'💵 To‘lovni qabul qilish')+'</button>';
+  else if(o.book) bt='<button data-a="bk" data-i="'+i+'">'+(lang==='ru'?'✅ Подтвердить бронь':'✅ Bronni tasdiqlash')+'</button><button class="no" data-a="cx" data-i="'+i+'">'+(lang==='ru'?'❌ Снять':'❌ Olib tashlash')+'</button>';
+  else bt='<button data-a="go" data-i="'+i+'">'+(lang==='ru'?'✅ Выбрать':'✅ Tanlash')+'</button><button class="no" data-a="cx" data-i="'+i+'">'+(lang==='ru'?'❌ Не забрал':'❌ Olib ketmadi')+'</button>'+(o.ed?'<button class="ed" data-a="ed" data-i="'+i+'">'+(lang==='ru'?'✏️ Изменить гравировку / количество':'✏️ Gravirovka / sonini o‘zgartirish')+'</button>':'');
+  h+='<div class="so">'+((SF.tab==='debt'?o.photo:o.pic)?'<img src="'+esc(SF.tab==='debt'?o.photo:o.pic)+'" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin-bottom:10px;display:block">':'')+'<div class="h"><b>'+esc(o.name)+'</b><span class="id">№'+esc(o.id)+'</span></div><div class="sm" style="color:var(--muted);font-size:12.5px;margin-top:3px">'+esc(o.qty)+' '+t('pcs')+' · '+esc(o.date)+'</div>'+engChip(o)+'<div class="cu">👤 '+esc(o.cust)+'</div>'+contactHtml(o)+(SF.tab==='debt'?'<div class="cu" style="font-weight:700">💵 '+fmt(o.amount)+'</div>':'')+'<div class="bt">'+bt+'</div></div>';
+ });
+ sb.innerHTML=h;
+ Array.prototype.forEach.call(sb.querySelectorAll('[data-tel]'),function(a){ a.onclick=function(e){ e.preventDefault(); var h=a.getAttribute('href'); try{ window.location.href=h }catch(err){} } });
+ Array.prototype.forEach.call(sb.querySelectorAll('[data-tg]'),function(a){ a.onclick=function(e){ try{ if(tg&&tg.openTelegramLink){ e.preventDefault(); tg.openTelegramLink(a.getAttribute('href')) } }catch(err){} } });
+ $('t1').onclick=function(){SF.tab='open';drawStaff()}; $('t2').onclick=function(){SF.tab='debt';drawStaff()}; if($('t3')) $('t3').onclick=function(){SF.tab='co';drawStaff()};
+ Array.prototype.forEach.call(sb.querySelectorAll('[data-a]'),function(b){ b.onclick=function(){ staffAct(b.dataset.a,L[+b.dataset.i]) } });
+}
+function wiz(o,body,prev){ sTop((lang==='ru'?'Заказ №':'Buyurtma №')+o.id,prev||function(){ renderStaff() }); $('sb').innerHTML='<div class="ord1"><b>'+esc(o.name)+'</b><div class="sm">'+esc(o.qty)+' '+t('pcs')+' · '+esc(o.cust)+'</div></div>'+body }
+function sAlert(mm){ try{ tg.showAlert(mm) }catch(e){ alert(mm) } }
+function photoStep(o,kind,next,prev){
+ var ru=lang==='ru';
+ wiz(o,'<h4 style="font:700 16px var(--f-head);margin:6px 0">'+(kind==='work'?(ru?'📷 Фото выполненной работы':'📷 Bajarilgan ish rasmi'):(ru?'🧾 Фото чека':'🧾 Chek rasmi'))+'</h4><input type="file" id="pf" accept="image/*" capture="environment" style="display:none"><input type="file" id="pg" accept="image/*" style="display:none"><button class="ph1" id="pb">'+(ru?'📷 Снять фото':'📷 Kamera')+'</button><button class="opt" id="pc" style="margin-top:8px;text-align:center">'+(ru?'🖼 Выбрать из галереи':'🖼 Galereyadan tanlash')+'</button><div class="msg" id="er" style="display:none;background:var(--chip);border-radius:12px;padding:12px;margin:8px 0"></div><button class="cta" id="pn" disabled>'+t('oConf')+'</button>',prev);
+ var data=null;
+ $('pb').onclick=function(){ $('pf').click() };
+ $('pc').onclick=function(){ $('pg').click() };
+ var got=function(){ var f=this.files[0]; if(!f) return; shrink(f,function(u){ data=u; $('pb').innerHTML='<img src="'+u+'">'; $('pc').style.display='none'; $('pn').disabled=false }) };
+ $('pf').onchange=got; $('pg').onchange=got;
+ $('pn').onclick=function(){ var b=$('pn'); b.disabled=true; b.textContent=t('oWait'); post({act:kind==='work'?'sw':'sk',id:o.id,row:o.row,img:data},function(r){ if(r.ok) next(); else { b.disabled=false; b.textContent=t('oConf'); var e=$('er'); e.style.display='block'; e.textContent=r.msg||t('oNet') } }) };
+}
+function shrink(file,cb){ var rd=new FileReader(); rd.onload=function(){ var im=new Image(); im.onload=function(){ var m=1280,k=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement('canvas'); c.width=im.width*k; c.height=im.height*k; c.getContext('2d').drawImage(im,0,0,c.width,c.height); cb(c.toDataURL('image/jpeg',.82)) }; im.src=rd.result }; rd.readAsDataURL(file) }
+function post(o,cb){
+ o.d=(tg&&tg.initData)||'';
+ fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({mini:o})}).then(function(r){return r.json()}).then(cb).catch(function(){cb({ok:false,msg:t('oNet')})});
+}
+function payStep(o,pre,prev){
+ var ru=lang==='ru', later=SF.tab!=='debt';
+ if(later&&!o.avc){ o.avc=1; post({act:'sa',id:o.id,row:o.row},function(r){ if(r&&r.ok&&r.auto){ sAlert(ru?'Оплачено с аванса клиента':'Mijoz avansidan to‘landi'); closeStep(o); return } payStep(o,pre,prev) }); return }
+ var L=[['card',ru?'💳 Карта':'💳 Karta'],['cash',ru?'💵 Наличные':'💵 Naqd'],['transfer',ru?'🏦 Перечисление':'🏦 Perechisleniya']]; if(later) L.push(['later',ru?'⏳ Позже (в долг)':'⏳ Keyinroq (qarz)']);
+ wiz(o,(pre?'<div class="msg" style="background:var(--chip);border-radius:12px;padding:12px;margin:8px 0">'+pre+'</div>':'')+'<h4 style="font:700 16px var(--f-head);margin:6px 0">'+(ru?'Как оплачено?':'Qanday to‘langan?')+'</h4><div class="pick" style="grid-template-columns:1fr">'+L.map(function(x){return '<button data-p="'+x[0]+'">'+x[1]+'</button>'}).join('')+'</div>',prev);
+ Array.prototype.forEach.call(document.querySelectorAll('[data-p]'),function(b){ b.onclick=function(){ var ty=b.dataset.p; post({act:'sp',id:o.id,row:o.row,p:ty},function(r){ if(!r.ok){ sAlert(r.msg||t('oNet')); return }
+   if(ty==='card') photoStep(o,'check',function(){ closeStep(o,function(){ payStep(o,pre,prev) }) },function(){ payStep(o,pre,prev) }); else if(ty==='later') doneMsg(o); else closeStep(o,function(){ payStep(o,pre,prev) }) }) } });
+}
+function closeStep(o,prev){
+ var ru=lang==='ru';
+ if(SF.tab==='debt'){ doneMsg(o); return }
+ wiz(o,'<h4 style="font:700 16px var(--f-head);margin:6px 0">'+(ru?'Заказ обработан?':'Buyurtma bajarildimi?')+'</h4><div class="pick"><button id="y1">'+(ru?'✔ Да, закрыть':'✔ Ha, yopish')+'</button><button id="y0">'+(ru?'Оставить открытым':'Ochiq qoldirish')+'</button></div>',prev);
+ $('y1').onclick=function(){ post({act:'sd',id:o.id,row:o.row},function(){ doneMsg(o) }) }; $('y0').onclick=function(){ doneMsg(o) };
+}
+function doneMsg(o){ wiz(o,'<div class="msg" style="background:var(--chip);border-radius:12px;padding:14px;font-weight:600;margin:10px 0">✅ '+(lang==='ru'?'Готово':'Tayyor')+'</div><button class="cta" id="bk2">'+t('oBack')+'</button>'); $('bk2').onclick=renderStaff }
+
+function editStep(o){
+ var ru=lang==='ru';
+ wiz(o,'<div class="msg" style="background:var(--chip);border-radius:12px;padding:12px;margin:8px 0">'+t('oWait')+'</div>');
+ post({act:'sq',id:o.id,row:o.row},function(q){
+  if(!q||!q.ok){ wiz(o,'<div class="msg" style="background:var(--chip);border-radius:12px;padding:12px;margin:8px 0">'+esc((q&&q.msg)||t('oNet'))+'</div>'); return }
+  var yes=!!q.yes, q0=Number(q.qty)||1, qty=q0, pn=Number(q.pn)||0, py=Number(q.py)||0, g=yes?'yes':'no';
+  function draw(){
+   var np=(g==='yes'?py:pn), tot=np*qty, old=(yes?py:pn)*q0, changed=(g==='yes')!==yes||qty!==q0;
+   wiz(o,'<h4 style="font:700 16px var(--f-head);margin:6px 0">'+(ru?'Количество':'Soni')+'</h4><div class="row" style="display:flex;align-items:center;gap:10px"><div class="stp" style="display:flex;align-items:center;background:var(--chip);border-radius:12px;overflow:hidden"><button id="mn" style="border:0;background:none;width:46px;height:46px;font-size:22px;font-weight:700">−</button><input id="qi" inputmode="decimal" value="'+qty+'" style="border:0;background:none;width:70px;text-align:center;font:700 18px var(--f-head);color:inherit;outline:0"><button id="pl" style="border:0;background:none;width:46px;height:46px;font-size:22px;font-weight:700">+</button></div></div>'+
+    '<h4 style="font:700 16px var(--f-head);margin:14px 0 6px">'+(ru?'Гравировка':'Gravirovka')+'</h4><div class="pick" style="grid-template-columns:1fr 1fr"><button data-g="yes" aria-pressed="'+(g==='yes')+'">🔥 '+(ru?'С гравировкой':'Gravirovka bilan')+'</button><button data-g="no" aria-pressed="'+(g==='no')+'">'+(ru?'Без гравировки':'Gravirovkasiz')+'</button></div>'+
+    '<div class="msg" style="background:var(--chip);border-radius:12px;padding:12px 14px;margin:14px 0;line-height:1.7"><div>'+(ru?'Цена за 1 шт.':'1 dona narxi')+': <b>'+fmt(np)+'</b></div><div>'+(ru?'Итого':'Jami')+': <b>'+fmt(tot)+'</b>'+(changed?' <span style="color:var(--muted)">('+(ru?'было':'avval')+' '+fmt(old)+')</span>':'')+'</div></div>'+
+    '<div class="msg" id="er" style="display:none;background:var(--chip);border-radius:12px;padding:12px;margin:8px 0"></div><button class="cta" id="ok" '+(changed?'':'disabled')+'>'+(ru?'Сохранить изменения':'O‘zgarishni saqlash')+'</button>');
+   var rd=function(){ return Number(String($('qi').value).replace(',','.')) };
+   $('mn').onclick=function(){ qty=Math.max((rd()||1)-1,1); draw() }; $('pl').onclick=function(){ qty=(rd()||0)+1; draw() };
+   $('qi').onchange=function(){ var v=rd(); if(v>0) qty=v; draw() };
+   Array.prototype.forEach.call(document.querySelectorAll('[data-g]'),function(b){ b.onclick=function(){ qty=rd()||qty; g=b.dataset.g; draw() } });
+   $('ok').onclick=function(){ var b=$('ok'); b.disabled=true; b.textContent=t('oWait');
+    post({act:'sc',id:o.id,row:o.row,q:qty,g:g},function(r){
+     if(r&&r.ok){ wiz(o,'<div class="msg" style="background:var(--chip);border-radius:12px;padding:12px 14px;font-weight:600">✅ '+(ru?'Заказ изменён: ':'Buyurtma o‘zgartirildi: ')+esc(r.text||'')+(r.notified?'<div style="font-weight:400;margin-top:4px">'+(ru?'Клиенту отправлено уведомление.':'Mijozga xabar yuborildi.')+'</div>':'')+'</div><button class="cta" id="fin">'+t('oBack')+'</button>'); $('fin').onclick=function(){ renderStaff() } }
+     else { b.disabled=false; b.textContent=(ru?'Сохранить изменения':'O‘zgarishni saqlash'); var e=$('er'); e.style.display='block'; e.textContent=(r&&r.msg)||t('oNet') } }) };
+  }
+  draw();
+ });
+}
+function tabsGo(){
+ var b1=$('t1'),b2=$('t2'),b3=$('t3');
+ if(b1) b1.onclick=function(){SF.tab='open';drawStaff()}; if(b2) b2.onclick=function(){SF.tab='debt';drawStaff()}; if(b3) b3.onclick=function(){SF.tab='co';drawStaff()};
+}
+function drawCo(h){
+ var sb=$('sb'), ru=lang==='ru';
+ if(!SF.co){
+  sb.innerHTML=h+'<div class="load">…</div>'; tabsGo();
+  post({act:'bl'},function(r){ if(!r||!r.ok){ sb.innerHTML=h+'<div class="empty">'+esc((r&&r.msg)||t('oNet'))+'</div>'; tabsGo(); return } SF.co=(r.list||[]).concat((r.adv||[]).map(function(a){return {key:a.key,label:a.label,bal:-a.avans,n:a.n,paid:a.paid,debt:a.debt}})); SF.coTotal=r.total||0; drawStaff() });
+  return;
+ }
+ h+='<div class="bigdebt" style="margin:0 0 12px;padding:16px"><small>'+(ru?'Общий долг компаний':'Kompaniyalar umumiy qarzi')+'</small><div style="font-size:26px">'+fmt(SF.coTotal)+'</div></div>';
+ if(!SF.co.length) h+='<div class="empty">—</div>';
+ SF.co.forEach(function(c,i){
+  h+='<div class="so"><div class="h"><b>'+esc(c.label)+'</b><span class="id" style="font-weight:700;color:var(--ink)">'+(c.bal<0?'+'+fmt(-c.bal)+(ru?' аванс':' avans'):fmt(c.bal))+'</span></div><div class="sm" style="color:var(--muted);font-size:12.5px;margin-top:3px">'+(ru?'Заказов: ':'Buyurtmalar: ')+c.n+(c.paid?' · '+(ru?'оплачено ':'to‘langan ')+fmt(c.paid)+' / '+fmt(c.debt):'')+'</div><div class="bt"><button data-co="'+i+'">'+(ru?'💵 Принять оплату / подробно':'💵 To‘lov / batafsil')+'</button></div></div>';
+ });
+ sb.innerHTML=h; tabsGo();
+ Array.prototype.forEach.call(sb.querySelectorAll('[data-co]'),function(b){ b.onclick=function(){ coDetail(SF.co[+b.dataset.co]) } });
+}
+function coDetail(c){
+ var ru=lang==='ru';
+ sTop(c.label,function(){ SF.co=null; SF.tab='co'; renderStaff() });
+ var sb=$('sb'); sb.innerHTML='<div class="load">…</div>';
+ post({act:'bd',k:c.key},function(r){
+  if(!r||!r.ok){ sb.innerHTML='<div class="empty">'+esc((r&&r.msg)||t('oNet'))+'</div>'; return }
+  var h='<div class="bigdebt" style="margin:0 0 12px;padding:16px"><small>'+(r.bal<0?(ru?'Аванс (мы должны клиенту)':'Avans (biz mijozdan qarzmiz)'):(ru?'Остаток долга':'Qolgan qarz'))+'</small><div style="font-size:26px">'+(r.bal<0?'+':'')+fmt(Math.abs(r.bal))+'</div></div>';
+  h+='<div class="sm" style="text-align:center;color:var(--muted);margin:0 0 12px">'+(ru?'Всего в долг: ':'Jami qarz: ')+fmt(r.debt)+' · '+(ru?'оплачено: ':'to‘langan: ')+fmt(r.paid)+'</div>';
+  if(r.canPay){
+   var IS='width:100%;box-sizing:border-box;padding:12px;font-size:16px;border:1px solid rgba(128,128,128,.4);border-radius:10px;background:var(--surface);color:inherit;margin:6px 0';
+   h+='<div class="so"><div class="h"><b>'+(ru?'Принять оплату':'To‘lovni qabul qilish')+'</b></div><input id="pa" inputmode="numeric" autocomplete="off" placeholder="'+(ru?'Сумма':'Summa')+'" style="'+IS+'"><input id="pn" autocomplete="off" placeholder="'+(ru?'Комментарий (необязательно)':'Izoh (ixtiyoriy)')+'" style="'+IS+'"><div class="bt"><button id="pf">'+(ru?'Весь остаток':'To‘liq qoldiq')+'</button><button id="pb">💵 '+(ru?'Принять':'Qabul qilish')+'</button></div></div>';
+  }
+  if(r.pays&&r.pays.length){
+   h+='<div style="margin:16px 0 8px;font:700 15px var(--f-head)">'+(ru?'Оплаты':'To‘lovlar')+'</div>';
+   r.pays.forEach(function(p){ h+='<div class="so"><div class="h"><b>'+fmt(p.amount)+'</b><span class="id">'+esc(p.date)+'</span></div><div class="sm" style="color:var(--muted);font-size:12.5px;margin-top:3px">'+esc(p.who)+(p.note?' · '+esc(p.note):'')+'</div></div>' });
+  }
+  h+='<div style="margin:16px 0 8px;font:700 15px var(--f-head)">'+(ru?'Заказы в долг':'Qarzga olingan buyurtmalar')+'</div>';
+  (r.orders||[]).forEach(function(o){ h+='<div class="so"><div class="h"><b>'+esc(o.name)+'</b><span class="id">№'+esc(o.id)+'</span></div><div class="sm" style="color:var(--muted);font-size:12.5px;margin-top:3px">'+esc(o.qty)+' '+t('pcs')+' · '+esc(o.date)+'</div><div class="cu">👤 '+esc(o.by)+'</div><div class="cu" style="font-weight:700">💵 '+fmt(o.amount)+'</div></div>' });
+  sb.innerHTML=h;
+  var pf=$('pf'), pb=$('pb');
+  if(pf) pf.onclick=function(){ $('pa').value=String(Math.max(r.bal,0)) };
+  if(pb) pb.onclick=function(){
+   var amt=Math.round(Number(String($('pa').value||'').replace(/[\s ]/g,'').replace(',','.')));
+   if(!(amt>0)){ sAlert(ru?'Введите сумму':'Summani kiriting'); return }
+   var msg=(ru?'Принять оплату ':'To‘lovni qabul qilasizmi: ')+fmt(amt)+' — '+r.label+'?'+(amt>Math.max(r.bal,0)?'\n'+(ru?'⚠️ Больше долга — разница станет авансом: ':'⚠️ Qarzdan ko‘p — farqi avans bo‘ladi: ')+fmt(amt-Math.max(r.bal,0)):'');
+   var go=function(){
+    pb.disabled=true;
+    post({act:'bp',k:r.key,a:amt,n:$('pn').value||''},function(x){
+     if(!x||!x.ok){ pb.disabled=false; sAlert((x&&x.msg)||t('oNet')); return }
+     sAlert((ru?'Принято. Остаток: ':'Qabul qilindi. Qolgan qarz: ')+fmt(x.bal));
+     SF.co=null; coDetail({key:r.key,label:r.label});
+    });
+   };
+   try{ if(tg&&tg.showConfirm){ tg.showConfirm(msg,function(ok){ if(ok) go() }); return } }catch(e){}
+   if(confirm(msg)) go();
+  };
+ });
+}
+
+/* ===== Statistika (admin) ===== */
+var ST={d:null,sec:null,y:null,m:null};
+var MON_UZ=['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
+var MON_RU=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+function stMon(m){ return (lang==='ru'?MON_RU:MON_UZ)[m-1] }
+function stTop(title,back){
+ sTop(title,back);
+ $('lg').onclick=function(){ lang=lang==='uz'?'ru':'uz'; try{localStorage.setItem('lp_lang',lang)}catch(e){}; stDraw() };
+}
+var ST_ROW='display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border-radius:12px;box-shadow:var(--shadow);margin-bottom:8px';
+function stRow(left,sub,right){ return '<div style="'+ST_ROW+'"><div style="min-width:0"><b style="overflow-wrap:anywhere">'+left+'</b>'+(sub?'<div class="sm" style="color:var(--muted)">'+sub+'</div>':'')+'</div><b style="white-space:nowrap">'+right+'</b></div>' }
+function stFolder(attr,ic,title,sub){ return '<button class="folder stf" '+attr+' style="width:100%;margin-bottom:10px"><span class="ic">'+ic+'</span><div><b>'+title+'</b><span class="n">'+sub+'</span></div></button>' }
+function renderStats(){
+ ST.sec=null; ST.y=null; ST.m=null;
+ stTop(lang==='ru'?'Статистика':'Statistika',function(){ state.view=null; render() });
+ var sb=$('sb'); sb.innerHTML='<div class="load">…</div>';
+ post({act:'st'},function(r){
+  if(!r||!r.ok){ sb.innerHTML='<div class="empty">'+esc((r&&r.msg)||t('oNet'))+'</div>'; return }
+  ST.d=r; stDraw();
+ });
+}
+function stDraw(){
+ if(!ST.d) return;
+ if(!ST.sec) stHome();
+ else if(ST.y===null) stYears();
+ else if(ST.sec==='profit') stProfit();
+ else if(ST.m===null) stPeriods();
+ else stDetail();
+}
+function stHome(){
+ var ru=lang==='ru';
+ stTop(ru?'Статистика':'Statistika',function(){ state.view=null; render() });
+ $('sb').innerHTML='<div class="mine" style="display:block">'
+  +stFolder('data-s="cust"','🏆',ru?'Топ клиенты':'Top mijozlar',ru?'по компаниям · по месяцам и годам':'kompaniyalar bo‘yicha · oy va yil')
+  +stFolder('data-s="profit"','💰',ru?'Прибыль':'Foyda',ru?'по месяцам и за год':'oyma-oy va yillik')
+  +stFolder('data-s="prod"','📦',ru?'Топ товары':'Eng ko‘p sotilgan tovarlar',ru?'топ-10 за месяц и за год':'oy va yil bo‘yicha top-10')
+  +'</div>';
+ Array.prototype.forEach.call(document.querySelectorAll('[data-s]'),function(el){ el.onclick=function(){ ST.sec=el.dataset.s; ST.y=null; ST.m=null; stDraw() } });
+}
+function stSecName(){ var ru=lang==='ru'; return ST.sec==='cust'?(ru?'Топ клиенты':'Top mijozlar'):ST.sec==='profit'?(ru?'Прибыль':'Foyda'):(ru?'Топ товары':'Eng ko‘p sotilgan tovarlar') }
+function stYears(){
+ var ru=lang==='ru', d=ST.d, ys=Object.keys(d.years).sort().reverse(), h='';
+ stTop(stSecName(),function(){ ST.sec=null; stDraw() });
+ ys.forEach(function(y){
+  var o=d.years[y].y, sub=ST.sec==='profit'?(ru?'Прибыль: ':'Foyda: ')+fmt(o.profit):o.orders+(ru?' заказов':' ta buyurtma');
+  h+=stFolder('data-y="'+y+'"','📅',y,sub);
+ });
+ $('sb').innerHTML='<div class="mine" style="display:block">'+h+'</div>';
+ Array.prototype.forEach.call(document.querySelectorAll('[data-y]'),function(el){ el.onclick=function(){ ST.y=Number(el.dataset.y); ST.m=null; stDraw() } });
+}
+function stMonths(y){ var ms=Object.keys(ST.d.years[y].m).map(Number); if(Number(y)===ST.d.cur[0]&&ms.indexOf(ST.d.cur[1])<0) ms.push(ST.d.cur[1]); return ms.sort(function(a,b){return b-a}) }
+function stProfit(){
+ var ru=lang==='ru', Y=ST.d.years[ST.y], o=Y.y, h='';
+ stTop(stSecName()+' · '+ST.y,function(){ ST.y=null; stDraw() });
+ h+='<div style="background:var(--accent);color:var(--accent-ink);border-radius:18px;padding:22px 18px;text-align:center;margin-bottom:12px"><small style="display:block;opacity:.85">'+(ru?'Прибыль за ':'Yillik foyda · ')+ST.y+'</small><div style="font:700 30px var(--f-head);margin-top:6px;overflow-wrap:anywhere">'+fmt(o.profit)+'</div></div>';
+ h+='<div class="sm" style="text-align:center;color:var(--muted);margin:0 0 14px">'+(ru?'Оборот: ':'Aylanma: ')+fmt(o.turn)+' · '+(ru?'заказов: ':'buyurtmalar: ')+o.orders+'</div>';
+ stMonths(ST.y).forEach(function(mo){
+  var b=Y.m[mo]||{profit:0,orders:0,turn:0};
+  h+=stRow(stMon(mo),b.orders+(ru?' заказов':' ta buyurtma'),fmt(b.profit));
+ });
+ $('sb').innerHTML=h;
+}
+function stPeriods(){
+ var ru=lang==='ru', Y=ST.d.years[ST.y], h='';
+ stTop(stSecName()+' · '+ST.y,function(){ ST.y=null; stDraw() });
+ h+=stFolder('data-m="0"','📅',(ru?'Весь ':'Butun yil · ')+ST.y,Y.y.orders+(ru?' заказов':' ta buyurtma'));
+ stMonths(ST.y).forEach(function(mo){ var b=Y.m[mo]; h+=stFolder('data-m="'+mo+'"','🗓',stMon(mo),(b?b.orders:0)+(ru?' заказов':' ta buyurtma')) });
+ $('sb').innerHTML='<div class="mine" style="display:block">'+h+'</div>';
+ Array.prototype.forEach.call(document.querySelectorAll('[data-m]'),function(el){ el.onclick=function(){ ST.m=Number(el.dataset.m); stDraw() } });
+}
+function stDetail(){
+ var ru=lang==='ru', d=ST.d, Y=d.years[ST.y], yearly=ST.m===0, b=yearly?Y.y:(Y.m[ST.m]||{cust:[],prod:[],orders:0,goods:0,profit:0});
+ var ttl=yearly?String(ST.y):stMon(ST.m)+' '+ST.y, h='', med=['🥇','🥈','🥉'];
+ stTop(stSecName()+' · '+ttl,function(){ ST.m=null; stDraw() });
+ if(ST.sec==='cust'){
+  var lst=b.cust.filter(function(c,i){ return yearly?i<3:(i<3||c.s>=d.min) });
+  if(!lst.length) h+='<div class="empty">'+(ru?'Пока нет данных':'Hozircha ma‘lumot yo‘q')+'</div>';
+  lst.forEach(function(c,i){ h+=stRow((i<3?med[i]:(i+1)+'.')+' '+esc(c.n),c.o+(ru?' заказов':' ta buyurtma'),fmt(c.s)) });
+  if(!yearly&&b.cust.length>3) h+='<div class="sm" style="color:var(--muted);text-align:center;margin-top:8px">'+(ru?'4–10 места — компании свыше ':'4–10-o‘rinlar — oyiga ')+fmt(d.min)+(ru?' за месяц':' dan oshganlar')+'</div>';
+ } else {
+  var pl=b.prod;
+  h+='<div class="sm" style="text-align:center;color:var(--muted);margin:0 0 12px">'+(ru?'Продано товара: ':'Sotilgan tovar: ')+b.goods+(ru?' шт.':' dona')+'</div>';
+  if(!pl.length) h+='<div class="empty">'+(ru?'Пока нет данных':'Hozircha ma‘lumot yo‘q')+'</div>';
+  pl.forEach(function(p,i){ h+=stRow((i<3?med[i]:(i+1)+'.')+' '+esc(p.n),p.o+(ru?' заказов · ':' ta buyurtma · ')+fmt(p.s),p.q+(ru?' шт.':' dona')) });
+ }
+ $('sb').innerHTML=h;
+}
+
+function staffAct(a,o){ var goBack=function(){ staffAct('go',o) };
+ var ru=lang==='ru';
+ if(a==='ed'){ editStep(o); return }
+ if(a==='go'){ wiz(o,'<h4 style="font:700 16px var(--f-head);margin:6px 0">'+(ru?'Гравировка сделана или отдали пустой?':'Gravirovka qilindimi yoki bo‘shmi?')+'</h4><div class="pick"><button id="g1">🔥 '+(ru?'С гравировкой':'Gravirovka bilan')+'</button><button id="g0">⬜ '+(ru?'Пустой':'Bo‘sh')+'</button></div>');
+  $('g1').onclick=function(){ photoStep(o,'work',function(){ payStep(o,'✅ '+(ru?'Фото работы сохранено.':'Ish rasmi saqlandi.'),goBack) },goBack) };
+  $('g0').onclick=function(){ post({act:'se',id:o.id,row:o.row},function(r){ if(!r.ok){ sAlert(r.msg||t('oNet')); return } payStep(o,undefined,goBack) }) }; return }
+ if(a==='pay'){ payStep(o); return }
+ if(a==='bk'){ wiz(o,'<h4 style="font:700 16px var(--f-head);margin:6px 0">'+(ru?'Гравировка нужна?':'Gravirovka kerakmi?')+'</h4><div class="pick"><button id="b1">🔥 '+(ru?'С гравировкой':'Gravirovka bilan')+'</button><button id="b0">⬜ '+(ru?'Без':'Gravirovkasiz')+'</button></div>');
+  $('b1').onclick=function(){ post({act:'sb',id:o.id,row:o.row,e:1},function(r){ if(!r.ok){ sAlert(r.msg||t('oNet')); return } doneMsg(o) }) }; $('b0').onclick=function(){ post({act:'sb',id:o.id,row:o.row,e:0},function(r){ if(!r.ok){ sAlert(r.msg||t('oNet')); return } doneMsg(o) }) }; return }
+ if(a==='cx'){ wiz(o,'<div class="msg" style="background:var(--chip);border-radius:12px;padding:14px;margin:10px 0">'+(ru?'Отменить заказ? Количество вернётся на склад, заказ удалится из таблицы.':'Buyurtma bekor qilinsinmi? Soni omborga qaytadi, buyurtma jadvaldan o‘chadi.')+'</div><div class="pick"><button id="c1" style="background:var(--sale);color:#fff">'+(ru?'✔ Да, отменить':'✔ Ha, bekor qilish')+'</button><button id="c0">'+(ru?'Нет':'Yo‘q')+'</button></div>');
+  $('c1').onclick=function(){ post({act:'sx',id:o.id,row:o.row},function(r){ if(!r.ok){ sAlert(r.msg||t('oNet')); return } doneMsg(o) }) }; $('c0').onclick=renderStaff }
+}
+
+function render(){ $('app').classList.remove('smode');
+ if(!DATA) return;
+ if(state.view){ renderView(); return }
+ var h='', P=vis(), q=state.q.trim().toLowerCase();
+ if(!state.folder&&!q){
+  h+='<div class="top"><div class="logo2"><img src="data:image/jpeg;base64,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" width="44" height="44" alt="Laser Point" style="border-radius:12px;display:block"></div><div class="grow"><h1>Laser Point</h1><small class="tel"><a href="tel:+998999898882">+998 99 989 88 82</a><a href="tel:+998339988882">+998 33 998 88 82</a></small></div>'+langBtn()+'</div>';
+  h+='<div class="hello">'+t('hi')+(USERNAME?', <b>'+esc(USERNAME)+'</b>':'')+'! 👋</div>';
+  h+='<input class="search" id="q" placeholder="'+t('search')+'" aria-label="'+t('search')+'">';
+  h+='<div class="folders">'+folderList().map(function(f){ if(f.sale) return '<button class="folder sale" data-f="@sale"><span class="ic">'+svg24('tag',30)+'</span><b>'+esc(f.name)+'</b><span class="pc">'+svg24('pct',56)+'</span></button>'; return '<button class="folder" data-f="'+esc(f.id)+'"><span class="ic">'+(f.ic==='plaque'||f.ic==='trophy'?svg24(f.ic,24):svg(f.ic,24))+'</span><div><b>'+esc(f.name)+'</b><span class="n">'+f.n+' '+t('cnt')+'</span></div></button>'}).join('')+'</div>';
+  h+='<a class="contact" href="https://t.me/laser_point_uz" id="ct"><span class="ci"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></span><span><b>'+t('contact')+'</b><small>'+t('contactSub')+' · @laser_point_uz</small></span></a>';
+  if(ME&&ME.staff) h+='<div class="mine"><button class="folder stf" data-v="staff"><span class="ic">'+svg24('manager',24)+'</span><div><b>'+t('stf')+'</b><span class="n">'+t('op')+' · '+t('unp')+'</span></div></button><button class="folder stf" id="svcb"><span class="ic">'+svg24('wrench',24)+'</span><div><b>'+(lang==='ru'?'Заказать услугу':'Xizmat buyurtmasi')+'</b><span class="n">'+(lang==='ru'?'Гравировка · UF':'Gravirovka · UF')+'</span></div></button>'+(ME.adm?'<button class="folder stf" data-v="stats"><span class="ic">📊</span><div><b>'+(lang==='ru'?'Статистика':'Statistika')+'</b><span class="n">'+(lang==='ru'?'клиенты · прибыль · товары':'mijozlar · foyda · tovarlar')+'</span></div></button>':'')+'</div>';
+  var nb=ME&&ME.orders&&ME.orders.length, db=ME&&ME.debt>0, ab=ME&&!(ME.debt>0)&&ME.avans>0;
+if(ME){ h+='<div class="mine"><button class="folder'+(db||ab?'':' one')+'" data-v="orders"><span class="ic av">'+svg24('user',24)+'</span><div><b>'+t('myo')+'</b><span class="n">'+(nb||0)+' '+(lang==='ru'?'шт.':'ta')+'</span></div></button>'+
+(db?'<button class="folder debt" data-v="debt"><span class="ic">'+svg24('hands',24)+'</span><div><b>'+t('debt')+'</b><span class="n">'+fmt(ME.debt)+'</span></div></button>':'')+
+(ab?'<button class="folder avn" data-v="debt"><span class="ic">'+svg24('hands',24)+'</span><div><b>'+(lang==='ru'?'Аванс':'Avans')+'</b><span class="n">+'+fmt(ME.avans)+'</span></div></button>':'')+'</div>'; }
+  h+='<h2>'+t('disc')+'</h2><div class="grid">'+RAND.map(card).join('')+'</div>';
+ } else {
+  var fo=folderList().filter(function(f){return f.id===state.folder})[0];
+  var title=q?t('search'):(fo?fo.name:t('all'));
+  var list=P.filter(function(x){return q?x.name.toLowerCase().indexOf(q)>=0:inFolder(x,state.folder)});
+  h+='<div class="top"><button class="back" id="back" aria-label="'+t('back')+'">←</button><div class="grow"><h1>'+esc(title)+'</h1><small>'+list.length+' '+t('cnt')+'</small></div>'+langBtn()+'</div>';
+  h+='<input class="search" id="q" placeholder="'+t('search')+'" value="'+esc(state.q)+'" aria-label="'+t('search')+'">';
+  h+=list.length?'<div class="grid">'+list.map(card).join('')+'</div>':'<div class="empty">'+t('none')+'</div>';
+ }
+ $('app').innerHTML=h;
+ var qi=$('q'); if(qi) qi.addEventListener('input',function(e){var v=e.target.value;state.q=v;if(v&&!state.folder)state.folder='@all';if(!v&&state.folder==='@all'&&!state._f)state.folder=null;render();var n=$('q');n.focus();n.setSelectionRange(v.length,v.length)});
+ var ct=$('ct'); if(ct) ct.onclick=function(e){ try{ if(tg&&tg.openTelegramLink){ e.preventDefault(); tg.openTelegramLink('https://t.me/laser_point_uz') } }catch(err){} };
+ var b=$('back'); if(b) b.onclick=function(){state={folder:null,q:''};render()};
+ Array.prototype.forEach.call(document.querySelectorAll('[data-v]'),function(el){el.onclick=function(){state.view=el.dataset.v;render()}});
+ var sv=$('svcb'); if(sv) sv.onclick=svcFlow;
+ var lg=$('lg'); if(lg) lg.onclick=function(){lang=lang==='uz'?'ru':'uz';try{localStorage.setItem('lp_lang',lang)}catch(e){};render()};
+ Array.prototype.forEach.call(document.querySelectorAll('[data-f]'),function(el){el.onclick=function(){state={folder:el.dataset.f,q:'',_f:1};render();window.scrollTo(0,0)}});
+ Array.prototype.forEach.call(document.querySelectorAll('[data-id]'),function(el){el.onclick=function(){openSheet(el.dataset.id)}});
+}
+
+function vidUrl(id){ return 'https://drive.google.com/uc?export=download&id='+encodeURIComponent(id) }
+function vidHtml(x,cls){ return '<video class="'+cls+'" muted playsinline loop preload="none" data-src="'+esc(vidUrl(x.video))+'"'+(x.photos[0]?' poster="'+esc(x.photos[0])+'"':'')+'></video>' }
+function vidFallback(v){ var m=(v.dataset.src||'').match(/id=([^&]+)/); if(!m||!v.parentNode) return; var f=document.createElement('iframe'); f.src='https://drive.google.com/file/d/'+decodeURIComponent(m[1])+'/preview'; f.allow='autoplay; fullscreen'; f.className=v.className; v.parentNode.replaceChild(f,v) }
+function playIn(box,idx){ Array.prototype.forEach.call(box.querySelectorAll('video'),function(v){ var p=v.parentNode, mine=p&&p.dataset&&+p.dataset.i===idx; if(mine){ if(!v.getAttribute('src')){ v.onerror=function(){ vidFallback(v) }; v.src=v.dataset.src } var pr=v.play(); if(pr&&pr.catch) pr.catch(function(){}) } else { try{v.pause()}catch(e){} } }) }
+function trackIdx(tr){ return Math.round(tr.scrollLeft/Math.max(tr.clientWidth,1)) }
+function zoomOpen(x,slides,start){
+ var z=$('zoom');
+ z.innerHTML='<div class="ztr" id="ztr">'+slides.map(function(s,i){ return '<div class="zs" data-i="'+i+'">'+(s.t==='img'?'<img src="'+esc(s.u)+'" alt="">':vidHtml(x,'zv'))+'</div>' }).join('')+'</div>'+
+  '<button class="zx" id="zx" aria-label="'+t('close')+'">✕</button>'+(slides.length>1?'<span class="zc" id="zc"></span><button class="za l" id="zl" aria-label="‹">‹</button><button class="za r" id="zr" aria-label="›">›</button><div class="dots zd" id="zd">'+slides.map(function(){return '<i></i>'}).join('')+'</div>':'');
+ z.classList.add('on');
+ var tr=$('ztr');
+ var upd=function(){ var i=trackIdx(tr), cc=$('zc'); if(cc) cc.textContent=(i+1)+' / '+slides.length; var d=$('zd'); if(d) Array.prototype.forEach.call(d.children,function(el,k){el.className=k===i?'on':''}); playIn(tr,i) };
+ tr.scrollLeft=start*tr.clientWidth; upd();
+ tr.addEventListener('scroll',function(){ clearTimeout(tr._t); tr._t=setTimeout(upd,80) });
+ var go=function(d){ var i=Math.max(0,Math.min(slides.length-1,trackIdx(tr)+d)); tr.scrollTo({left:i*tr.clientWidth,behavior:'smooth'}) };
+ if($('zl')){ $('zl').onclick=function(e){e.stopPropagation();go(-1)}; $('zr').onclick=function(e){e.stopPropagation();go(1)} }
+ $('zx').onclick=function(e){ e.stopPropagation(); zoomClose() };
+}
+function zoomClose(){ var z=$('zoom'); z.classList.remove('on'); Array.prototype.forEach.call(z.querySelectorAll('video'),function(v){try{v.pause()}catch(e){}}); z.innerHTML=''; var tr=$('track'); if(tr&&$('scrim').classList.contains('on')) playIn(tr,trackIdx(tr)) }
+function openSheet(id){
+ var x=DATA.products.filter(function(p){return p.id===id})[0]; if(!x) return; lg('Tovar korildi',(x.name||'')+' ['+id+']');
+ var openDesc=false;
+ var slides=x.photos.map(function(u){return {t:'img',u:u}}); if(x.video) slides.push({t:'vid'});
+ function gal(){
+  if(!slides.length) return '<div class="gal"><div class="slide" style="cursor:default"><span class="ph" style="width:80px;opacity:.35">'+svg('ph',80)+'</span></div></div>';
+  return '<div class="gal"><div class="track" id="track">'+slides.map(function(s,i){
+   return s.t==='img'?'<div class="slide" data-i="'+i+'"><img src="'+esc(s.u)+'" alt=""></div>'
+   :'<div class="slide vid" data-i="'+i+'">'+vidHtml(x,'sv')+'<span class="tag">'+t('video')+'</span></div>'}).join('')+'</div>'+
+   (slides.length>1?'<span class="cnt" id="cnt">1/'+slides.length+'</span><div class="dots" id="dots">'+slides.map(function(_,i){return '<i'+(i?'':' class="on"')+'></i>'}).join('')+'</div>':'')+'</div>';
+ }
+ function stopVids(){ Array.prototype.forEach.call($('sheet').querySelectorAll('video'),function(v){try{v.pause()}catch(e){}}) }
+ function paint(){
+  var out=x.qty<=0;
+  $('sheet').innerHTML='<div class="shd"><span class="grow"></span><button class="close" id="cl" aria-label="'+t('close')+'">✕</button></div>'+gal()+
+  '<h3>'+esc(x.name)+'</h3><div class="stock'+(x.qty>0&&x.qty<=5?' low':'')+'">'+(out?t('gone'):t('inst')+': '+x.qty+' '+t('pcs'))+'</div>'+
+  prices(x,true)+
+  (x.min>1?'<div class="note">'+t('min')+': '+x.min+' '+t('pcs')+'</div>':'')+
+  (x.desc?'<div class="desc'+(x.desc.length>140&&!openDesc?' cl':'')+'" id="ds">'+esc(x.desc)+'</div>'+(x.desc.length>140?'<button class="more" id="mr">'+(openDesc?t('less'):t('more'))+'</button>':''):'')+
+  '<button class="cta" id="go"'+(out?' disabled':'')+'>'+(out?t('soldout'):t('order'))+'</button>';
+  $('cl').onclick=close;
+  var mr=$('mr'); if(mr) mr.onclick=function(){openDesc=!openDesc;var sc=$('sheet').scrollTop;paint();$('sheet').scrollTop=sc};
+  $('go').onclick=function(){ if(out) return; stopVids(); ordFlow(x,false,paint) };
+  var tr=$('track'); if(tr){
+   var upd=function(){ var i=trackIdx(tr); var cc=$('cnt'); if(cc) cc.textContent=(i+1)+'/'+slides.length; var d=$('dots'); if(d) Array.prototype.forEach.call(d.children,function(el,k){el.className=k===i?'on':''}); playIn(tr,i) };
+   tr.addEventListener('scroll',function(){ clearTimeout(tr._t); tr._t=setTimeout(upd,80) });
+   Array.prototype.forEach.call(tr.querySelectorAll('.slide'),function(el){ el.onclick=function(){ stopVids(); zoomOpen(x,slides,+el.dataset.i) } });
+   upd();
+  }
+ }
+ function close(){ stopVids(); $('scrim').classList.remove('on'); $('sheet').innerHTML='' }
+ paint(); $('scrim').classList.add('on');
+ $('scrim').onclick=function(e){ if(e.target===$('scrim')) close() };
+}
+function botLink(id){ var url='https://t.me/'+DATA.bot+(id?'?start='+encodeURIComponent(id):'');
+ try{ if(tg&&tg.openTelegramLink){ tg.openTelegramLink(url); tg.close&&setTimeout(function(){tg.close()},300) } else window.open(url,'_blank') }catch(e){ window.open(url,'_blank') } }
+var LGQ={};
+function lg(w,x){ try{ var init=(tg&&tg.initData)||''; if(!init||window.DEMO_API) return; var k=w+'|'+x, n=Date.now(); if(LGQ[k]&&n-LGQ[k]<60000) return; LGQ[k]=n; api({act:'lg',d:init,w:w,x:x},function(){}) }catch(e){} }
+function api(params,cb){
+ if(window.DEMO_API){ setTimeout(function(){ cb(window.DEMO_API(params)) },120); return }
+ var q=''; for(var k in params) q+='&'+k+'='+encodeURIComponent(params[k]);
+ fetch(API+'?'+q.slice(1)).then(function(r){return r.json()}).then(cb).catch(function(){cb({ok:false,code:'net',msg:t('oNet')})});
+}
+
+var USERS=null;
+function loadUsers(cb){ if(USERS) return cb(USERS); if(window.DEMO_USERS){ USERS=window.DEMO_USERS; return cb(USERS) } api({act:'ul',d:(tg&&tg.initData)||''},function(r){ USERS=(r&&r.users)||[]; cb(USERS) }) }
+function whoPick(box,opt,done,back){
+ loadUsers(function(us){
+  var ru=lang==='ru';
+  box('<h4>'+(ru?'Для кого заказ?':'Kim uchun buyurtma qilyapsiz?')+'</h4><input class="search" id="wq" placeholder="'+(ru?'🔍 Имя, компания или телефон':'🔍 Ism, korxona yoki telefon')+'" autocomplete="off"><div id="wl" style="max-height:38vh;overflow:auto;margin:4px 0 8px"></div><button class="opt" id="wm">'+(ru?'✍️ Другой — написать вручную':'✍️ Boshqa — qo‘lda yozish')+'</button><div id="wman" style="display:none"><textarea id="wh" rows="3" placeholder="'+(ru?'Имя и телефон одним сообщением':'Ism va telefon raqamini yozing')+'" style="width:100%;box-sizing:border-box;border-radius:12px;padding:12px;font:inherit;background:var(--surface);color:var(--ink);border:1px solid var(--line)"></textarea><div class="msg" id="er" style="display:none"></div><button class="cta" id="wok">'+t('oNext')+'</button></div>'+(opt.skip?'<button class="sec" id="ws">'+(ru?'Пропустить':'O‘tkazib yuborish')+'</button>':'')+'<button class="sec" id="bk">'+t('oBack')+'</button>',back);
+  var lst=$('wl'), q=$('wq');
+  function draw(){ var k=q.value.trim().toLowerCase(), r=us.filter(function(u){ return !k||(u.name+' '+(u.company||'')+' '+(u.phone||'')+' '+(u.username||'')).toLowerCase().indexOf(k)>=0 }), tot=r.length; r=r.slice(0,40);
+   lst.innerHTML=r.length?r.map(function(u,i){ return '<button class="opt" data-i="'+i+'" style="margin-bottom:6px"><b>'+esc(u.name)+'</b><div style="font-weight:400;font-size:12.5px;color:var(--muted)">'+esc([u.company,u.phone,u.username?'@'+u.username:''].filter(Boolean).join(' · '))+'</div></button>' }).join('')+(tot>40?'<div style="color:var(--muted);font-size:12px;padding:4px 2px">… '+(tot-40)+' '+(ru?'ещё — уточните поиск':'ta yana — qidiruvni aniqlang')+'</div>':''):'<div style="color:var(--muted);padding:10px 2px">'+(ru?'Не найдено':'Topilmadi')+'</div>';
+   Array.prototype.forEach.call(lst.querySelectorAll('[data-i]'),function(b){ b.onclick=function(){ var u=r[+b.dataset.i]; done({text:[u.name,u.company,u.phone].filter(Boolean).join(', '),uid:u.id}) } }) }
+  q.oninput=draw; draw();
+  $('wm').onclick=function(){ $('wman').style.display='block'; $('wm').style.display='none'; $('wh').focus() };
+  $('wok').onclick=function(){ var v=$('wh').value.trim(); if(!v){ var er=$('er'); er.style.display='block'; er.textContent=ru?'Напишите, для кого':'Kim uchun ekanini yozing'; return } done({text:v,uid:''}) };
+  if(opt.skip) $('ws').onclick=function(){ done({text:'',uid:''}) };
+  $('bk').onclick=back });
+}
+function svcFlow(){
+ var sh=$('sheet'), ru=lang==='ru', st={type:'',qty:0,price:0,who:'',uid:''};
+ var box=function(h,prev){ sh.innerHTML='<div class="shd">'+(prev?'<button class="back" id="pv">←</button>':'')+'<span class="grow"></span><button class="close" id="cl" aria-label="x">✕</button></div><div class="ord"><h3>'+(ru?'Заказ на услугу':'Xizmat buyurtmasi')+'</h3>'+h+'</div>'; $('cl').onclick=close; if(prev) $('pv').onclick=prev; sh.scrollTop=0 };
+ function close(){ $('scrim').classList.remove('on'); sh.innerHTML='' }
+ function s1(){ box('<h4>'+(ru?'Какая услуга?':'Qaysi xizmat?')+'</h4><button class="opt" data-t="Гравировка">'+(ru?'Гравировка':'Gravirovka')+'</button><button class="opt" data-t="UF печать">'+(ru?'UF печать':'UF pechat')+'</button>');
+  Array.prototype.forEach.call(sh.querySelectorAll('[data-t]'),function(b){ b.onclick=function(){ st.type=b.dataset.t; s2() } }) }
+ function num(id,msg,next,prev,val){ return function(){ var v=Number(String($(id).value).replace(/\s/g,'').replace(',','.')); if(!(v>0)){ var er=$('er'); er.style.display='block'; er.textContent=msg; return } next(v) } }
+ function s2(){ box('<h4>'+(ru?'Сколько штук?':'Nechta dona?')+'</h4><input class="search" id="nv" inputmode="decimal" value="'+(st.qty||'')+'" placeholder="0"><div class="msg" id="er" style="display:none"></div><button class="cta" id="nx">'+t('oNext')+'</button><button class="sec" id="bk">'+t('oBack')+'</button>',s1);
+  $('bk').onclick=s1; $('nx').onclick=num('nv',ru?'Напишите число':'Sonni yozing',function(v){ st.qty=v; s3() }) }
+ function s3(){ box('<h4>'+(ru?'Цена за 1 шт. (сум)':'1 dona uchun narx (so‘m)')+'</h4><input class="search" id="nv" inputmode="decimal" value="'+(st.price||'')+'" placeholder="15000"><div class="msg" id="er" style="display:none"></div><button class="cta" id="nx">'+t('oNext')+'</button><button class="sec" id="bk">'+t('oBack')+'</button>',s2);
+  $('bk').onclick=s2; $('nx').onclick=num('nv',ru?'Напишите цену числом':'Narxni son bilan yozing',function(v){ st.price=v; s4() }) }
+ function s4(){ whoPick(box,{skip:true},function(w){ st.who=w.text; st.uid=w.uid; s5() },s3) }
+ function s5(){ box('<h4>'+(ru?'Проверьте заказ':'Buyurtmani tekshiring')+'</h4><div class="sum"><div>🛠 <b>'+esc(st.type==='UF печать'?(ru?'UF печать':'UF pechat'):(ru?'Гравировка':'Gravirovka'))+'</b></div><div>'+t('oQty')+': <b>'+st.qty+' '+t('pcs')+'</b></div><div>'+(ru?'Цена за 1 шт.':'1 dona narxi')+': <b>'+fmt(st.price)+'</b></div><div>'+t('oTot')+': <b>'+fmt(st.qty*st.price)+'</b></div>'+(st.who?'<div>👤 <b>'+esc(st.who)+'</b></div>':'')+'</div><div class="msg" id="er" style="display:none"></div><button class="cta" id="ok">'+t('oConf')+'</button><button class="sec" id="ed">'+t('oEdit')+'</button>',s4);
+  $('ed').onclick=s1;
+  $('ok').onclick=function(){ var b=$('ok'); if(b.disabled) return; b.disabled=true; b.textContent=t('oWait');
+   api({act:'svc',d:(tg&&tg.initData)||'',ty:st.type,q:st.qty,p:st.price,w:st.who,wu:st.uid,n:String(Date.now())},function(r){
+    if(r&&r.ok){ box('<div class="msg" style="font-weight:600">✅ '+esc(r.text||'OK')+'</div><button class="cta" id="fin">'+t('oBack')+'</button>'); $('fin').onclick=close; return }
+    b.disabled=false; b.textContent=t('oConf'); var er=$('er'); er.style.display='block'; er.textContent=(r&&r.msg)||t('oNet') }) } }
+ $('scrim').classList.add('on'); s1();
+}
+function ordFlow(x,engr0,back){
+ var sh=$('sheet'), box=function(h,prev){ sh.innerHTML='<div class="shd">'+(prev?'<button class="back" id="pv" aria-label="'+t('back')+'">←</button>':'')+'<span class="grow"></span><button class="close" id="cl" aria-label="x">✕</button></div><div class="ord"><h3>'+esc(x.name)+'</h3>'+h+'</div>'; if(prev) $('pv').onclick=prev; $('cl').onclick=function(){ $('scrim').classList.remove('on'); sh.innerHTML='' }; sh.scrollTop=0 };
+ var regForm=function(r){
+  var h='<div class="msg">'+esc(r.intro||t('oReg'))+'</div>';
+  r.fields.forEach(function(f,i){ var ty=f.t===6?'tel':(f.t===5?'email':'text');
+   h+='<h4>'+esc(f.title||f.text)+'</h4><input class="fi" id="rf'+i+'" type="'+ty+'" inputmode="'+(f.t===6?'tel':f.t===3?'decimal':'text')+'" placeholder="'+esc(f.t===6?'+998 90 123 45 67':(f.t===4?'dd.MM.yyyy':''))+'" autocomplete="off">' });
+  h+='<div class="msg" id="er" style="display:none"></div><button class="cta" id="rs">'+t('oConf')+'</button><button class="sec" id="bk">'+t('oBack')+'</button>';
+  box(h,back); $('bk').onclick=back;
+  $('rs').onclick=function(){ var vals={}, ok=true; r.fields.forEach(function(f,i){ var v=$('rf'+i).value.trim(); if(!v) ok=false; vals[f.k]=v });
+   var er=$('er'); if(!ok){ er.style.display='block'; er.textContent=r.bad||'?'; return }
+   var b=$('rs'); b.disabled=true; b.textContent=t('oWait');
+   api({act:'reg',d:(tg&&tg.initData)||'',id:x.id,f:JSON.stringify(vals)},function(z){ if(z.ok){ ordFlow(x,engr0,back) } else { b.disabled=false; b.textContent=t('oConf'); er.style.display='block'; er.textContent=z.msg||t('oNet') } }) } };
+ var fail=function(r){
+  if(r.code==='reg'&&r.fields&&r.fields.length){ regForm(r); return }
+  var h='<div class="msg">'+esc(r.code==='reg'||r.code==='admin'||r.code==='auth'?t('oReg'):(r.msg||t('oNet')))+'</div>';
+  if(r.code==='reg'||r.code==='admin'||r.code==='auth') h+='<button class="cta" id="ob">'+t('oBot')+'</button>';
+  h+='<button class="sec" id="bk">'+t('oBack')+'</button>'; box(h,back);
+  var ob=$('ob'); if(ob) ob.onclick=function(){ botLink(x.id) }; $('bk').onclick=back };
+ box('<div class="msg">'+t('oWait')+'</div>');
+ var init=(tg&&tg.initData)||''; if(!init){ fail({code:'auth'}); return }
+ api({act:'chk',d:init,id:x.id},function(c){
+  if(!c.ok){ fail(c); return }
+  var qty=Math.max(c.min||1,1), g=engr0?'yes':'no', rules=c.rules||{};
+  var priceOf=function(g){ return g==='yes'?(x.priceE||x.price):(x.price||x.priceE) };
+  var gname=function(g){ return c.opt[g] };
+  var nonce=String(Date.now())+Math.random().toString(36).slice(2,8);
+  var who='';
+  var whoId='';
+  function step0(){ whoPick(box,{},function(w){ who=w.text; whoId=w.uid; step1() },back) }
+  function step1(){
+   box('<h4>'+t('oQty')+'</h4><div class="row"><div class="stp"><button id="mn">−</button><input id="qi" inputmode="decimal" value="'+qty+'"><button id="pl">+</button></div><span style="color:var(--muted)">'+t('inst')+': '+c.ostatok+(c.min>1?' · '+t('min')+': '+c.min:'')+'</span></div>'+
+    '<h4>'+t('oEngr')+'</h4><div class="q">'+esc(c.q)+'</div>'+
+    ['no','yes','book'].map(function(k){ return '<button class="opt" data-g="'+k+'" aria-pressed="'+(g===k)+'">'+esc(gname(k))+'</button>' }).join('')+
+    '<div class="msg" id="er" style="display:none"></div>'+
+    '<button class="cta" id="nx">'+t('oNext')+'</button><button class="sec" id="bk">'+t('oBack')+'</button>',c.staff?step0:back);
+   var inp=$('qi'), er=$('er');
+   var rd=function(){ return Number(String(inp.value).replace(',','.')) };
+   $('mn').onclick=function(){ var v=rd()||0; v=Math.max(v-1,0); inp.value=v };
+   $('pl').onclick=function(){ var v=rd()||0; inp.value=Math.min(v+1,c.ostatok) };
+   Array.prototype.forEach.call(sh.querySelectorAll('.opt'),function(b){ b.onclick=function(){ qty=rd()||qty; g=b.dataset.g; step1() } });
+   $('bk').onclick=back;
+   $('nx').onclick=function(){
+    var v=rd(), m=null;
+    if(!(v>0)) m='?'; else if(rules.maxOrder&&rules.maxQty&&v>rules.maxQty) m='max '+rules.maxQty; else if(rules.whole&&Math.round(v)!==v) m=lang==='ru'?'Только целые числа':'Faqat butun son';
+    else if(rules.minOrder&&c.min&&v<c.min) m=t('min')+': '+c.min; else if(v>c.ostatok) m=t('inst')+': '+c.ostatok;
+    else if(rules.saleAll&&c.min&&!(c.ostatok-v>=c.min||c.ostatok-v===0)) m=t('inst')+': '+c.ostatok+' · '+t('min')+': '+c.min;
+    if(m){ er.style.display='block'; er.textContent=m; return }
+    qty=v; step2() };
+  }
+  function step2(){
+   var tot=priceOf(g)*qty;
+   box('<h4>'+t('oChk')+'</h4><div class="sum">'+(c.staff?'<div>👤 <b>'+esc(who)+'</b></div>':'')+'<div>'+t('oProd')+': <b>'+esc(x.name)+'</b></div><div>'+t('oQty')+': <b>'+qty+' '+t('pcs')+'</b></div><div>'+t('oEngr')+': <b>'+esc(gname(g))+'</b></div><div>'+t('oTot')+': <b>'+fmt(tot)+'</b></div></div>'+
+    '<div class="msg" id="er" style="display:none"></div><button class="cta" id="ok">'+t('oConf')+'</button><button class="sec" id="ed">'+t('oEdit')+'</button>',step1);
+   $('ed').onclick=step1;
+   $('ok').onclick=function(){ var b=$('ok'); if(b.disabled) return; b.disabled=true; b.textContent=t('oWait');
+    api({act:'ord',d:init,id:x.id,q:qty,g:g,n:nonce,w:who,wu:whoId},function(r){
+     if(r.ok&&r.done){ try{ if(tg&&tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success') }catch(e){}
+      box('<div class="msg" style="font-weight:600">✅ '+esc(r.text)+'</div>'+(r.book?'<div class="msg">'+esc(t('oBookNote').replace('{u}',r.until))+'</div>':'')+'<button class="cta" id="fin">'+t('oBack')+'</button>');
+      $('fin').onclick=function(){ $('scrim').classList.remove('on'); sh.innerHTML=''; load() }; return }
+     if(r.code==='qty'||r.code==='net'||r.code==='err'){ b.disabled=false; b.textContent=t('oConf'); var er=$('er'); er.style.display='block'; er.textContent=r.msg||t('oNet'); return }
+     fail(r) }) };
+  }
+  if(c.staff) step0(); else step1();
+ });
+}
+$('zoom').onclick=function(e){ if(e.target===$('zoom')||(e.target.classList&&e.target.classList.contains('zs'))) zoomClose() };
+function vvH(){ var h=(window.visualViewport&&window.visualViewport.height)||window.innerHeight; document.documentElement.style.setProperty('--vh',h+'px') }
+vvH(); if(window.visualViewport){ visualViewport.addEventListener('resize',vvH); visualViewport.addEventListener('scroll',vvH) } window.addEventListener('resize',vvH); try{ if(tg&&tg.onEvent) tg.onEvent('viewportChanged',vvH) }catch(e){}
+document.addEventListener('focusin',function(e){ var el=e.target; if(el&&el.closest&&el.closest('.sheet')&&/INPUT|TEXTAREA/.test(el.tagName)) setTimeout(function(){ try{ el.scrollIntoView({block:'center',behavior:'smooth'}) }catch(x){} },320) });
+load();
+</script></body></html>
