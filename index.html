@@ -514,6 +514,9 @@ function contactInfo(o){ var txt=String(o.cust||''), un='', ph='';
  var dg=ph.replace(/\D/g,''), tgl=un?'https://t.me/'+un:(dg?'https://t.me/+'+dg:'');
  return {tg:tgl,tel:ph.replace(/\D/g,'').length>=7?ph:''} }
 
+/* «buyurtma tayyor»: matnli havola (t.me/user?text=) — openTelegramLink iOS'da matnni tashlab yuboradi, shuning uchun oddiy havola sifatida */
+function openReady(url){ try{ if(tg&&tg.openLink){ tg.openLink(url); return } }catch(e){} window.open(url,'_blank') }
+
 var ICON={
  bag:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18l-2 12H5z"/><path d="M8 7a4 4 0 0 1 8 0"/></svg>',
  star:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>',
@@ -1102,7 +1105,7 @@ document.addEventListener('click',function(e){
  if(d.scx){ var ox=findO(d.scx,'open'); if(ox){ S.cx={who:'staff',o:ox}; render(true) } return }
  if(d.cxn){ S.cx=null; render(true); return }
  if(d.cxy){ cxYes(); return }
- if(d.ready){ var lk=S.ok&&S.ok.link; S.ok=null; render(true); if(lk) openTg(lk); return }
+ if(d.ready){ var lk=S.ok&&S.ok.link; S.ok=null; render(true); if(lk) openReady(lk); return }
  if(d.okx){ S.ok=null; render(true); return }
  if(d.share){ if(S.ok&&S.ok.share) shareText(S.ok.share); return }
  if(d.dfb){ var F=S.df; if(F.step==='check'){ F.step='pay' } else if(F.step==='pay'&&!F.recv&&(F.photo||engKind(F.o)==='yes')){ F.step='photo' } else if(F.step==='pay'&&!F.recv&&F.asked){ F.step='ask'; F.se=false } else { S.df=null; S.v='staff' } render(true); return }
