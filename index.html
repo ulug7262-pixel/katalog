@@ -490,7 +490,7 @@ function post(o,cb,quiet){
  fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({mini:o})}).then(function(r){return r.json()}).then(done).catch(function(){done({ok:false,msg:L('Aloqa xatosi','Ошибка связи')})});
 }
 /* orqa fon navbati: ekran darrov o'zgaradi, server ketma-ket yozadi */
-var Q=[], QRUN=false;
+var Q=[], QRUN=false, ORDN=0;
 function qpush(job){ Q.push(job); qrun(); qguard() }
 function qguard(){ try{ if(!tg) return; if(Q.length||QRUN){ tg.enableClosingConfirmation&&tg.enableClosingConfirmation() } else { tg.disableClosingConfirmation&&tg.disableClosingConfirmation() } }catch(e){} }
 function qrun(){
@@ -667,9 +667,15 @@ function vOrder(){ var o=S.o;
  h3+='<button class="cta cta3" style="margin-top:14px'+(br?';background:var(--sale);color:#fff':'')+'" data-oconf="1">'+(br?L('Brakni tasdiqlash · ','Подтвердить брак · ')+n3+L(' ta',' шт.'):g3==='book'?L('Bron qilish · ','Забронировать · ')+n3+L(' ta',' шт.'):L('Tasdiqlash · ','Подтвердить · ')+fmt(n3*u3))+'</button>';
  return h3+'</div>' }
 function orderStart(x){
- S.o={x:x,step:'load',qty:'',g:null,who:null,nonce:String(Date.now())+Math.random().toString(36).slice(2,8)}; S.v='order'; render();
+ S.o={x:x,step:'load',qty:'',g:null,who:null,nonce:String(Date.now())+Math.random().toString(36).slice(2,8)}; S.v='order';
  if(!INIT()){ S.o.step='err'; S.o.err=L('Buyurtma berish uchun botda bir marta ro‘yxatdan o‘ting.','Чтобы заказать, зарегистрируйтесь в боте.'); S.o.bot=1; render(); return }
- api({act:'chk',d:INIT(),id:x.id},function(c){ if(S.v!=='order'||S.o.x!==x) return; orderGot(c) });
+ // oldingi tekshiruv saqlangan bo'lsa — darrov keyingi qadam, server orqada tekshiradi
+ var kc=lsGet('lp_chk'), quick=!!(kc&&kc.ok);
+ if(quick){ var c0={}; for(var k in kc) c0[k]=kc[k]; c0.ostatok=Number(x.qty)||0; orderGot(c0) } else render();
+ api({act:'chk',d:INIT(),id:x.id},function(c){ if(S.v!=='order'||!S.o||S.o.x!==x) return;
+  if(c&&c.ok){ var sv={}; for(var k in c) if(k!=='ostatok') sv[k]=c[k]; lsSet('lp_chk',sv); if(quick&&S.o.c){ S.o.c.ostatok=c.ostatok; S.o.c.min=c.min; S.o.c.rules=c.rules; S.o.c.opt=c.opt; return } }
+  else if(quick&&!(c&&(c.code==='reg'||c.code==='auth'||c.code==='admin'))) return;
+  orderGot(c) },true);
  if(isStaff()) loadUsers(function(){});
 }
 function orderGot(c){ var o=S.o;
@@ -680,19 +686,22 @@ function orderBack(){ var o=S.o;
  var L2=oSteps(), i=L2.indexOf(o.step);
  if(i>0&&o.step!=='err'&&o.step!=='reg'&&o.step!=='load'){ o.step=L2[i-1]; o.err=''; if(o.step==='who') o.pk={mode:null}; render(); return }
  S.o=null; S.v='prod'; render() }
-function orderConfirm(){ var o=S.o, n=parseInt(o.qty,10)||0, br=!!(o.who&&o.who.brak), g=br?'no':o.g;
- var t0=Date.now(), title=br?L('Brak yozildi','Брак записан'):g==='book'?L('Bron qilindi','Забронировано'):L('Buyurtma qabul qilindi','Заказ принят');
- S.ok={title:title,sub:'<span class="spin2" style="display:inline-block;width:16px;height:16px;vertical-align:-3px"></span>',red:br}; render();
+function orderConfirm(){ var o=S.o, n=parseInt(o.qty,10)||0, br=!!(o.who&&o.who.brak), g=br?'no':o.g, st=!!(o.c&&o.c.staff);
+ var title=br?L('Brak yozildi','Брак записан'):g==='book'?L('Bron qilindi','Забронировано'):L('Buyurtma qabul qilindi','Заказ принят');
+ var sub=br?esc(o.x.name)+' · '+n+L(' ta',' шт.'):st?esc(o.who&&o.who.nm||'')+L(' uchun',' — для клиента'):g==='book'?esc(o.x.name)+' · '+n+L(' ta',' шт.'):L('Menejer tez orada bog‘lanadi','Менеджер скоро свяжется');
+ try{ tg&&tg.HapticFeedback&&tg.HapticFeedback.notificationOccurred('success') }catch(e){}
+ // ekran darrov: ✓ → katalogga qaytish; server orqada yozadi
+ S.ok={title:title,sub:sub,red:br}; render();
+ try{ var p=DATA.products.filter(function(x){return x.id===o.x.id})[0]; if(p) p.qty=Math.max(0,p.qty-n) }catch(e){}
+ var back=S.from==='folder'&&S.cat?'folder':'home', saved=o;
+ setTimeout(function(){ if(S.ok&&S.ok.title===title) S.ok=null; S.o=null; if(S.v==='order') S.v=back; render() },1300);
+ ORDN++; try{ tg&&tg.enableClosingConfirmation&&tg.enableClosingConfirmation() }catch(e){}
  api({act:'ord',d:INIT(),id:o.x.id,q:n,g:g,n:o.nonce,w:(o.who&&!br?o.who.text:''),wu:(o.who&&!br?o.who.uid||'':''),br:br?1:''},function(r){
-  var wait=Math.max(0,1300-(Date.now()-t0));
-  if(r&&r.ok&&r.done){ try{ tg&&tg.HapticFeedback&&tg.HapticFeedback.notificationOccurred('success') }catch(e){}
-   S.ok.sub=br?esc(o.x.name)+' · '+n+L(' ta',' шт.'):o.c.staff?esc(o.who.nm)+L(' uchun',' — для клиента')+(o.who.uid?'<br>'+L('Mijozga xabar yuborildi','Клиенту отправлено уведомление'):''):(r.book?L('Bron ','Бронь до ')+esc(r.until)+L(' gacha',''):L('Menejer tez orada bog‘lanadi','Менеджер скоро свяжется'));
-   render();
-   try{ var p=DATA.products.filter(function(x){return x.id===o.x.id})[0]; if(p) p.qty=Math.max(0,p.qty-n) }catch(e){}
-   setTimeout(function(){ S.ok=null; var st=o.c.staff; S.o=null; if(st){ S.v='staff'; S.stab=br?'done':'open'; if(br) DL=null; refreshStaff(true); if(br) loadDone(true) } else { S.v='my'; S.tab='a'; loadMe() } render(); setTimeout(load,800) },wait+1400);
-   return }
-  S.ok=null; if(r&&(r.code==='reg'||r.code==='auth'||r.code==='admin')){ orderGot(r); return }
-  o.err=(r&&r.msg)||L('Aloqa xatosi','Ошибка связи'); render() });
+  ORDN=Math.max(0,ORDN-1); try{ if(!ORDN&&!Q.length&&!QRUN) tg&&tg.disableClosingConfirmation&&tg.disableClosingConfirmation() }catch(e){}
+  if(r&&r.ok&&r.done){ if(st){ if(br) DL=null; refreshStaff(true); if(br) loadDone(true) } else loadMe(); setTimeout(load,500); return }
+  try{ var p2=DATA.products.filter(function(x){return x.id===saved.x.id})[0]; if(p2) p2.qty+=n }catch(e){}
+  toast(L('Buyurtma saqlanmadi: ','Заказ не сохранён: ')+esc(saved.x.name)+' — '+((r&&r.msg)||L('aloqa xatosi','ошибка связи')),1);
+  if(r&&(r.code==='reg'||r.code==='auth'||r.code==='admin')){ S.o=saved; S.v='order'; orderGot(r) } else render() },true);
 }
 /* ===== Kim uchun (mijoz tanlash) ===== */
 var USERS=lsGet('lp_us');
@@ -824,8 +833,8 @@ function findO(id,tab){ var r=SF.list||{}; var L0=tab==='debt'?r.debt:tab==='don
 /* ===== Bajarildi / Pul qabul qilish ===== */
 function dfStart(o,recv){ var k=engKind(o);
  S.df={o:o,recv:!!recv,step:recv?'pay':(k==='yes'?'photo':k==='no'?'pay':'ask'),photo:null,checks:[],pay:null,se:!recv&&k==='no'}; S.v='dflow'; render(); dfAvans() }
-function dfAvans(){ var F=S.df; if(F.recv||F.step!=='pay'||F.avc) return; F.avc=1; F.avl=1; render();
- post({act:'sa',id:F.o.id,row:F.o.row},function(r){ F.avl=0; if(S.df!==F) return; if(r&&r.ok&&r.auto){ F.pay='avans'; dfFinish(); return } render() },true) }
+function dfAvans(){ var F=S.df; if(F.recv||F.step!=='pay'||F.avc) return; F.avc=1;
+ post({act:'sa',id:F.o.id,row:F.o.row},function(r){ F.avl=0; if(S.df!==F) return; if(r&&r.ok&&r.auto&&!F.pay&&F.step==='pay'&&!S.ok){ F.pay='avans'; dfFinish(); return } },true) }
 function dfSteps(){ var F=S.df; return (F.recv?[]:(engKind(F.o)==='yes'||F.photo||F.step==='photo'?['photo']:F.step==='ask'?['ask']:[])).concat(['pay']).concat(F.pay==='card'?['check']:[]) }
 function vDflow(){ var F=S.df, o=F.o, L2=dfSteps(), i=L2.indexOf(F.step)+1;
  var title={ask:L('Gravirovka qilindimi?','Гравировка сделана?'),photo:L('Ish rasmi','Фото работы'),pay:F.recv?L('Pul qabul qilish','Принять оплату'):L('Qanday to‘landi?','Как оплачено?'),check:L('Chek rasmlari','Фото чеков')}[F.step];
