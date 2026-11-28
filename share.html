@@ -1,0 +1,20 @@
+<!doctype html><html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Yuborish · Laser Point</title>
+<style>body{margin:0;min-height:100vh;background:#0F151C;color:#E8EDF2;font:16px -apple-system,system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;box-sizing:border-box}
+.s{color:#8E9BAB;font-size:14px;text-align:center}.t{white-space:pre-wrap;background:#18212B;border:1px solid #2A3644;border-radius:14px;padding:12px 14px;width:100%;max-width:360px;box-sizing:border-box;font-size:14px;line-height:1.45;max-height:45vh;overflow:auto}
+button,a{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;max-width:360px;height:56px;border-radius:16px;border:0;font:700 18px system-ui;text-decoration:none;cursor:pointer}
+.p{background:#2AABEE;color:#fff}.g{background:#18212B;color:#E8EDF2;border:1px solid #2A3644;height:48px;font-size:15px}</style></head><body>
+<div class="s">Laser Point</div><div class="t" id="t"></div>
+<button class="p" id="sh">✈ Ulashish</button>
+<a class="g" id="tgl" href="#">Telegram'da ochish</a>
+<button class="g" id="cp">📋 Nusxa olish</button>
+<div class="s" id="hint">«Ulashish» → Telegram → akkaunt va chatni tanlang</div>
+<script>
+var tx='';try{tx=decodeURIComponent((location.hash||'').slice(1))}catch(e){tx=(location.hash||'').slice(1)}
+document.getElementById('t').textContent=tx;
+document.getElementById('tgl').href='tg://msg?text='+encodeURIComponent(tx);
+var sh=document.getElementById('sh'),h=document.getElementById('hint');
+if(!navigator.share){sh.style.display='none';h.textContent="«Telegram'da ochish» yoki nusxa olib yuboring"}
+sh.onclick=function(){navigator.share({text:tx}).catch(function(){})};
+document.getElementById('cp').onclick=function(){var b=this;var ok=function(){b.textContent='✓ Nusxa olindi'};try{navigator.clipboard.writeText(tx).then(ok,function(){fb()})}catch(e){fb()}function fb(){var a=document.createElement('textarea');a.value=tx;document.body.appendChild(a);a.select();try{document.execCommand('copy');ok()}catch(e){}a.remove()}};
+</script>
+</body></html>
