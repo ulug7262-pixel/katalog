@@ -495,7 +495,7 @@ function qrun(){
  if(QRUN) return; var job=Q[0]; if(!job){ qguard(); return } QRUN=true;
  var steps=job.steps.slice(), next=function(){
   var s=steps.shift(); if(!s){ Q.shift(); QRUN=false; if(job.done) job.done(); qguard(); if(!Q.length) refreshStaff(true); qrun(); return }
-  post(s,function(r){ if(r&&r.ok!==false){ if(s._then) s._then(r); next() } else { Q.shift(); QRUN=false; toast('№'+job.id+': '+((r&&r.msg)||L('saqlanmadi','не сохранено')),1); refreshStaff(true); qguard(); qrun() } },true) };
+  post(s,function(r){ if(r&&r.ok!==false){ if(s._then) s._then(r); next() } else { if(S.ok&&S.ok.ready===job.id){ S.ok.wait=0; S.ok.link=''; try{render(true)}catch(x){} } Q.shift(); QRUN=false; toast('№'+job.id+': '+((r&&r.msg)||L('saqlanmadi','не сохранено')),1); refreshStaff(true); qguard(); qrun() } },true) };
  next();
 }
 var LGQ={};
@@ -850,42 +850,47 @@ function dfFinish(){ var F=S.df, o=F.o, steps=[], payV={cash:'naxt',card:'karta'
  if(F.se) steps.push({act:'se',id:o.id,row:o.row});
  if(F.pay!=='avans') steps.push({act:'sp',id:o.id,row:o.row,p:F.pay});
  F.checks.forEach(function(u){ steps.push({act:'sk',id:o.id,row:o.row,img:u}) });
- if(!F.recv) steps.push({act:'sd',id:o.id,row:o.row});
+ if(!F.recv) steps.push({act:'sd',id:o.id,row:o.row,_then:function(r){ if(S.ok&&S.ok.ready===o.id){ S.ok.link=r&&r.link||''; S.ok.wait=0; render(true) } }});
  qpush({id:o.id,steps:steps,done:function(){ loadDone(true) }});
  var r=SF.list;
  if(F.recv){ dropLocal(o,'debt') }
  else { dropLocal(o,'open'); if(F.pay==='later'&&r){ var d=Object.assign({},o,{amount:o.full||o.amount,photo:F.photo||''}); r.debt.unshift(d); r.total=(r.total||0)+(+d.amount||0); lsSet('lp_sl',r) } }
  if(F.pay!=='later'&&DL&&DL.list){ var t=new Date(); DL.list.unshift({id:o.id,row:o.row,name:o.name,qty:o.qty,engr:o.engr,date:('0'+t.getDate()).slice(-2)+'.'+('0'+(t.getMonth()+1)).slice(-2)+'.'+t.getFullYear(),sum:o.full||o.amount,pay:payV,pic:o.pic||'',wp:F.photo||'',cust:o.cust,phone:o.phone,company:o.company,fw:o.fw,tgu:o.tgu}) }
  S.df=null; S.v='staff';
- S.ok={title:F.pay==='later'?L('Qarzga yozildi','Записано в долг'):F.pay==='avans'?L('Avansdan to‘landi','Оплачено с аванса'):F.recv?L('To‘lov qabul qilindi','Оплата принята'):L('Buyurtma yopildi','Заказ закрыт'),sub:'№'+esc(o.id)+(F.pay&&PAYS[F.pay]&&F.pay!=='later'?' · '+L(PAYS[F.pay][0],PAYS[F.pay][1]):'')};
- render(); setTimeout(function(){ S.ok=null; render(true) },1600) }
+ S.ok={ready:F.recv?0:o.id,wait:F.recv?0:1,title:F.pay==='later'?L('Qarzga yozildi','Записано в долг'):F.pay==='avans'?L('Avansdan to‘landi','Оплачено с аванса'):F.recv?L('To‘lov qabul qilindi','Оплата принята'):L('Buyurtma yopildi','Заказ закрыт'),sub:'№'+esc(o.id)+(F.pay&&PAYS[F.pay]&&F.pay!=='later'?' · '+L(PAYS[F.pay][0],PAYS[F.pay][1]):'')};
+ if(F.recv){ render(); setTimeout(function(){ S.ok=null; render(true) },1600) } else render() }
 
 /* ===== O'zgartirish va bronni tasdiqlash ===== */
 function edStart(o,bron){ var n=String(o.name||'').trim().toLowerCase(), pr=DATA&&DATA.products.filter(function(x){return String(x.name).trim().toLowerCase()===n})[0];
  var q0=+o.qty||0, unit=q0?Math.round((+o.full||0)/q0):0, yes=engKind(o)==='yes';
  var q={ok:true,qty:q0,yes:yes,pn:pr?(pr.price||pr.priceE):unit,py:pr?(pr.priceE||pr.price):unit,ost:pr?pr.qty:0};
  if(!pr&&unit){ if(yes) q.pn=unit; else q.py=unit }
- S.ed={o:o,bron:bron,load:0,q:q,qty:String(q0||''),ty:bron?null:(yes?'yes':'no')}; S.v='edit'; render() }
+ S.ed={o:o,bron:bron,load:0,q:q,qty:String(q0||''),ty:bron?null:(yes?'yes':'no'),price:''}; S.v='edit'; render() }
+function edCalc(){ var E=S.ed, o=E.o, q=E.q, n=parseInt(E.qty,10)||0, max=E.bron?(+q.qty||0)+(+q.ost||0):0, bad=!!(E.bron&&max&&n>max);
+ var cur=q.qty?Math.round((+o.full||0)/(+q.qty)):0; if(!cur) cur=q.yes?+q.py:+q.pn;
+ var sameTy=(E.ty==='yes')===!!q.yes, def=sameTy?cur:(E.ty==='yes'?+q.py:+q.pn), u=E.price!==''&&E.price!=null?(parseInt(E.price,10)||0):def;
+ var ch=E.bron?!!E.ty:(n!==+q.qty||!sameTy||u!==cur);
+ return {n:n,bad:bad,max:max,cur:cur,u:u,ch:ch&&n>0&&!bad&&(E.bron||u>0)} }
+function edBtnTxt(c){ var E=S.ed; return E.bron?(E.ty?L('Tasdiqlash','Подтвердить'):L('Turini tanlang','Выберите вариант')):(c.ch?L('Saqlash','Сохранить'):L('O‘zgarish yo‘q','Без изменений')) }
+function edUpd(){ var c=edCalc(), t=$('edtot'); if(t) t.innerHTML='<span>'+c.n+' × '+num(c.u)+'</span><b>'+fmt(c.n*c.u)+'</b>'; var bx=$('qbx'); if(bx) bx.className='qbox'+(c.bad?' bad':''); var sb=$('esave'); if(sb){ sb.disabled=!c.ch; sb.textContent=edBtnTxt(c) } }
 function vEdit(){ var E=S.ed, o=E.o;
  var h='<div class="scr nonav">'+hdr(E.bron?L('Bronni tasdiqlash','Подтверждение брони'):L('O‘zgartirish','Изменение'),'№'+esc(o.id)+' · '+esc(o.name)+' · '+esc(o.cust||''),0,0,'edb');
- if(E.load) return h+'<div class="load"><span class="spin2"></span></div></div>';
- if(E.err&&!E.q) return h+'<div class="msg err">'+esc(E.err)+'</div></div>';
- var q=E.q, n=parseInt(E.qty,10)||0, max=E.bron?(+q.qty||0)+(+q.ost||0):0, bad=E.bron&&max&&n>max;
- var u=E.bron?0:(E.ty==='yes'?+q.py:+q.pn), ch=E.bron?!!E.ty:(n!==+q.qty||(E.ty==='yes')!==!!q.yes);
- h+='<div class="edwas" style="margin-top:6px">'+(E.bron?L('Bron: ','Бронь: ')+'<b>'+q.qty+L(' dona',' шт.')+'</b> · '+L('omborda yana ','на складе ещё ')+(q.ost||0)+' · '+L('turini tanlang','выберите вариант'):L('Hozir: ','Сейчас: ')+'<b>'+q.qty+L(' dona',' шт.')+' · '+(q.yes?L('Gravirovka bilan','С гравировкой'):L('Gravirovkasiz','Без гравировки'))+' · '+fmt((q.yes?+q.py:+q.pn)*(+q.qty))+'</b>')+'</div>';
- h+='<div class="qrow"><label class="qbox'+(bad?' bad':'')+'" id="qbx"><input id="en" class="qin2" type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" placeholder="0" value="'+esc(E.qty)+'"><span class="qu">'+L('dona','шт.')+'</span></label></div>';
- if(bad) h+='<div class="qmsg bad">'+L('Ko‘pi bilan ','Максимум ')+max+'</div>';
+ var q=E.q, c=edCalc();
+ h+='<div class="edwas" style="margin-top:6px">'+(E.bron?L('Bron: ','Бронь: ')+'<b>'+q.qty+L(' dona',' шт.')+'</b> · '+L('omborda yana ','на складе ещё ')+(q.ost||0)+' · '+L('turini tanlang','выберите вариант'):L('Hozir: ','Сейчас: ')+'<b>'+q.qty+L(' dona',' шт.')+' · '+(q.yes?L('Gravirovka bilan','С гравировкой'):L('Gravirovkasiz','Без гравировки'))+' · '+num(c.cur)+' × '+q.qty+' = '+fmt(c.cur*(+q.qty))+'</b>')+'</div>';
+ h+='<div class="qrow"><label class="qbox'+(c.bad?' bad':'')+'" id="qbx"><input id="en" class="qin2" type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" placeholder="0" value="'+esc(E.qty)+'"><span class="qu">'+L('dona','шт.')+'</span></label></div>';
+ if(c.bad) h+='<div class="qmsg bad">'+L('Ko‘pi bilan ','Максимум ')+c.max+'</div>';
  h+='<div class="pills two" style="margin-top:12px">'+[['yes',L('Gravirovka bilan','С гравировкой')],['no',L('Gravirovkasiz','Без гравировки')]].map(function(t){return '<button data-ety="'+t[0]+'" class="'+(E.ty===t[0]?'on':'')+'">'+t[1]+'</button>'}).join('')+'</div>';
- if(!E.bron) h+='<div class="edtot" style="margin-top:12px" id="edtot"><span>'+n+' × '+num(u)+'</span><b>'+fmt(n*u)+'</b></div>';
- if(E.err) h+='<div class="msg err">'+esc(E.err)+'</div>';
- h+='<button class="cta cta3" id="esave" style="margin-top:14px" data-esave="1" '+(ch&&n>0&&!bad?'':'disabled')+'>'+(E.bron?(E.ty?L('Tasdiqlash','Подтвердить'):L('Turini tanlang','Выберите вариант')):(ch?L('Saqlash','Сохранить'):L('O‘zgarish yo‘q','Без изменений')))+'</button>';
+ if(!E.bron){
+  h+='<label class="box" style="display:flex;align-items:center;gap:10px;padding:10px 14px"><span style="flex:1"><b style="display:block;font-size:14px">'+L('1 dona narxi','Цена за 1 шт.')+'</b><span class="sm">'+L('Chegirma bersangiz — o‘zgartiring','Для скидки — измените')+'</span></span><input id="epr" class="fi" style="width:140px;margin:0;text-align:right;font:700 18px var(--f-head)" type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" value="'+(E.price!==''&&E.price!=null?esc(E.price):c.u)+'"></label>';
+  h+='<div class="edtot" style="margin-top:12px" id="edtot"><span>'+c.n+' × '+num(c.u)+'</span><b>'+fmt(c.n*c.u)+'</b></div>' }
+ h+='<button class="cta cta3" id="esave" style="margin-top:14px" data-esave="1" '+(c.ch?'':'disabled')+'>'+edBtnTxt(c)+'</button>';
  return h+'</div>' }
-function edSave(){ var E=S.ed, o=E.o, n=parseInt(E.qty,10)||0;
+function edSave(){ var E=S.ed, o=E.o, c=edCalc(), n=c.n;
  if(E.bron){ qpush({id:o.id,steps:[{act:'sb',id:o.id,row:o.row,e:E.ty==='yes'?1:0,q:n}]}); o.book=false; o.engr=E.ty==='yes'?'С гравировкой':'Без гравировки'; o.qty=n; lsSet('lp_sl',SF.list);
   S.ed=null; S.v='staff'; S.ok={title:L('Bron tasdiqlandi','Бронь подтверждена'),sub:'№'+esc(o.id)+' · '+n+L(' dona',' шт.')}; render(); setTimeout(function(){S.ok=null;render(true)},1600); return }
- var q=E.q, u=E.ty==='yes'?+q.py:+q.pn; qpush({id:o.id,steps:[{act:'sc',id:o.id,row:o.row,q:n,g:E.ty}]});
- o.qty=n; o.engr=E.ty==='yes'?'С гравировкой':'Без гравировки'; o.full=n*u; lsSet('lp_sl',SF.list);
- S.ed=null; S.v='staff'; render(true); toast('№'+o.id+' '+L('o‘zgartirildi · ','изменён · ')+n+L(' dona',' шт.')) }
+ var st={act:'sc',id:o.id,row:o.row,q:n,g:E.ty}; if(c.u!==c.cur||E.price!=='') st.pr=c.u; qpush({id:o.id,steps:[st]});
+ o.qty=n; o.engr=E.ty==='yes'?'С гравировкой':'Без гравировки'; o.full=n*c.u; o.amount=o.full; lsSet('lp_sl',SF.list);
+ S.ed=null; S.v='staff'; render(true); toast('№'+o.id+' '+L('o‘zgartirildi · ','изменён · ')+n+L(' dona × ',' шт. × ')+num(c.u)) }
 
 /* ===== Bekor qilish ===== */
 function cxYes(){ var c=S.cx; S.cx=null; S.cxa=c; render(true);
@@ -921,7 +926,7 @@ function coPay(){ var c=S.cod, r=c.r, amt=Math.round(Number(String(c.amt||'').re
 
 /* ===== Admin: statistika ===== */
 var ST={d:null,sec:null,y:null,m:null};
-function stLoad(){ ST={d:null,sec:null,y:null,m:null}; post({act:'st'},function(r){ ST.d=r||{ok:false}; if(S.v==='stats') render(true) },true) }
+function stLoad(){ var c=lsGet('lp_st'); ST={d:c&&c.ok?c:null,sec:null,y:null,m:null}; post({act:'st'},function(r){ if(r&&r.ok){ ST.d=r; lsSet('lp_st',r) } else if(!ST.d) ST.d=r||{ok:false}; if(S.v==='stats'&&!(document.activeElement&&document.activeElement.tagName==='INPUT')) render(true) },true) }
 function stMonths(y){ var ms=Object.keys(ST.d.years[y].m).map(Number); if(Number(y)===ST.d.cur[0]&&ms.indexOf(ST.d.cur[1])<0) ms.push(ST.d.cur[1]); return ms.sort(function(a,b){return b-a}) }
 function stSec(){ return ST.sec==='cust'?L('Top mijozlar','Топ клиенты'):ST.sec==='profit'?L('Foyda','Прибыль'):L('Eng ko‘p sotilgan','Топ товары') }
 function vStats(){ var h='<div class="scr">', d=ST.d;
@@ -947,7 +952,7 @@ function vStats(){ var h='<div class="scr">', d=ST.d;
 
 /* ===== Ustki qatlamlar ===== */
 function okv(){ if(!S.ok) return ''; var c=S.ok.red?'#FF7154':'#2BD91F';
- return '<div class="okv"><svg width="120" height="120" viewBox="0 0 120 120"><circle class="okc" cx="60" cy="60" r="52" fill="none" stroke="'+c+'" stroke-width="6" stroke-linecap="round"/><path class="okp" d="M38 62l15 15 30-32" fill="none" stroke="'+c+'" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg><b>'+S.ok.title+'</b><span>'+(S.ok.sub||'')+'</span></div>' }
+ return '<div class="okv"><svg width="120" height="120" viewBox="0 0 120 120"><circle class="okc" cx="60" cy="60" r="52" fill="none" stroke="'+c+'" stroke-width="6" stroke-linecap="round"/><path class="okp" d="M38 62l15 15 30-32" fill="none" stroke="'+c+'" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg><b>'+S.ok.title+'</b><span>'+(S.ok.sub||'')+'</span>'+(S.ok.ready?'<div style="width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px;margin-top:10px">'+(S.ok.wait?'<button class="cta" style="height:54px;background:#2AABEE;color:#fff;opacity:.6" disabled><span class="spin2" style="display:inline-block;width:16px;height:16px;vertical-align:-3px;border-top-color:#fff"></span> '+L('Saqlanmoqda…','Сохраняется…')+'</button>':S.ok.link?'<button class="cta" style="height:54px;background:#2AABEE;color:#fff" data-ready="1">✈ '+L('Mijozga yozish: buyurtma tayyor','Написать клиенту: заказ готов')+'</button>':'<div class="sm" style="text-align:center">'+L('Mijozning username yoki raqami yo‘q — xabar yuborib bo‘lmaydi','Нет username или номера клиента')+'</div>')+'<button class="sec2" style="margin-top:0" data-okx="1">'+(S.ok.link?L('Keyinroq','Позже'):L('Yopish','Закрыть'))+'</button></div>':'')+'</div>' }
 function cxv(){
  if(S.cx){ var c=S.cx, o=c.o; return '<div class="sheet c"><div class="cbox"><span class="cxi">'+ICON.x+'</span><b>№'+esc(o.id)+(c.who==='client'?L(' bronni bekor qilasizmi?',' — отменить бронь?'):L(' bekor qilinsinmi?',' — отменить заказ?'))+'</b><span class="sm">'+esc(o.name)+' · '+esc(o.qty)+L(' dona',' шт.')+'<br>'+L('Soni omborga qaytadi','Количество вернётся на склад')+(c.who==='staff'?L(', buyurtma jadvaldan o‘chadi.',', заказ удалится из таблицы.'):'.')+'</span><button class="cyes" data-cxy="1">'+L('Ha, bekor qilish','Да, отменить')+'</button><button class="cno" data-cxn="1">'+L('Yo‘q, orqaga','Нет, назад')+'</button></div></div>' }
  if(S.cxa) return '<div class="okv cxa"><svg width="120" height="120" viewBox="0 0 120 120"><circle class="okc" cx="60" cy="60" r="52" fill="none" stroke="#FF7154" stroke-width="6" stroke-linecap="round"/><path class="xl1" d="M42 42l36 36" fill="none" stroke="#FF7154" stroke-width="8" stroke-linecap="round"/><path class="xl2" d="M78 42 42 78" fill="none" stroke="#FF7154" stroke-width="8" stroke-linecap="round"/></svg><b>'+L('Bekor qilindi','Отменено')+'</b><span>№'+esc(S.cxa.o.id)+L(' · soni omborga qaytdi',' · количество вернулось на склад')+'</span></div>';
@@ -983,7 +988,8 @@ document.addEventListener('input',function(e){ var el=e.target, id=el.id, v=el.v
  if(id==='fw'){ pkCtx().pk.fw=v; clrBtn('fw',v); var b=$('fwok'); if(b) b.disabled=!v.trim(); return }
  if(id==='qn'){ var d=v.replace(/\D/g,'').slice(0,6); if(d!==v) el.value=d; S.o.qty=d; var n=parseInt(d,10)||0, er=qtyErr(n), m=$('qmsg'); if(m){ m.textContent=er||L('Sonini yozing','Введите количество'); m.className='qmsg'+(er?' bad':'') } var bx=$('qbx'); if(bx) bx.className='qbox'+(er?' bad':''); var nx=$('qnext'); if(nx) nx.disabled=!(n>0&&!er); return }
  if(id==='svn'){ var d2=v.replace(/\D/g,'').slice(0,9); if(d2!==v) el.value=d2; S.sv[S.sv.step]=d2; var nb=$('svnext'); if(nb) nb.disabled=!(+d2>0); return }
- if(id==='en'){ var d3=v.replace(/\D/g,'').slice(0,6); if(d3!==v) el.value=d3; S.ed.qty=d3; var E=S.ed, n3=parseInt(d3,10)||0, q=E.q, max=E.bron?(+q.qty||0)+(+q.ost||0):0, bad=E.bron&&max&&n3>max, u=E.ty==='yes'?+q.py:+q.pn, ch=E.bron?!!E.ty:(n3!==+q.qty||(E.ty==='yes')!==!!q.yes); var t=$('edtot'); if(t) t.innerHTML='<span>'+n3+' × '+num(u)+'</span><b>'+fmt(n3*u)+'</b>'; var bx2=$('qbx'); if(bx2) bx2.className='qbox'+(bad?' bad':''); var sb=$('esave'); if(sb){ sb.disabled=!(ch&&n3>0&&!bad); sb.textContent=E.bron?(E.ty?L('Tasdiqlash','Подтвердить'):L('Turini tanlang','Выберите вариант')):(ch?L('Saqlash','Сохранить'):L('O‘zgarish yo‘q','Без изменений')) } return }
+ if(id==='en'){ var d3=v.replace(/\D/g,'').slice(0,6); if(d3!==v) el.value=d3; S.ed.qty=d3; edUpd(); return }
+ if(id==='epr'){ var d5=v.replace(/\D/g,'').slice(0,9); if(d5!==v) el.value=d5; S.ed.price=d5; edUpd(); return }
  if(id==='coa'){ var d4=v.replace(/\D/g,''); S.cod.amt=d4; if(d4!==v) el.value=num(d4).replace(/^0$/,''); return }
  if(id==='con'){ S.cod.note=v; return }
 });
@@ -1041,6 +1047,8 @@ document.addEventListener('click',function(e){
  if(d.scx){ var ox=findO(d.scx,'open'); if(ox){ S.cx={who:'staff',o:ox}; render(true) } return }
  if(d.cxn){ S.cx=null; render(true); return }
  if(d.cxy){ cxYes(); return }
+ if(d.ready){ var lk=S.ok&&S.ok.link; S.ok=null; render(true); if(lk) openTg(lk); return }
+ if(d.okx){ S.ok=null; render(true); return }
  if(d.dfb){ var F=S.df; if(F.step==='check'){ F.step='pay' } else if(F.step==='pay'&&!F.recv&&(F.photo||engKind(F.o)==='yes')){ F.step='photo' } else if(F.step==='pay'&&!F.recv&&F.asked){ F.step='ask'; F.se=false } else { S.df=null; S.v='staff' } render(true); return }
  if(d.dask!==undefined){ var F2=S.df; F2.asked=1; if(d.dask==='1'){ F2.step='photo' } else { F2.se=true; F2.step='pay' } render(); dfAvans(); return }
  if(d.pick){ var pk=d.pick.split(':'); S.df.ch=pk[1]; var fi2=$(pk[0]==='cam'?'fcam':(pk[1]==='check'?'fgalm':'fgal')); fi2.value=''; fi2.click(); return }
@@ -1052,7 +1060,7 @@ document.addEventListener('click',function(e){
  if(d.dfn){ S.df.step=d.dfn; render(); return }
  if(d.dfin){ dfFinish(); return }
  if(d.edb){ S.ed=null; go('staff'); return }
- if(d.ety){ S.ed.ty=d.ety; render(true); return }
+ if(d.ety){ S.ed.ty=d.ety; S.ed.price=''; render(true); return }
  if(d.esave){ edSave(); return }
  if(d.co){ coDet(SF.co.list[+d.co]); return }
  if(d.cob){ S.cod=null; go('co'); return }
