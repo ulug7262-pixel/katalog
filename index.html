@@ -443,6 +443,8 @@ h4{margin:16px 0 6px;font:700 15px var(--f-head)}
 .pk2 button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;aspect-ratio:1;border-radius:20px;border:2px dashed var(--muted);background:var(--surface);color:var(--ink)}
 .pk2 b{font:700 17px var(--f-head)}
 .desc{display:block!important;-webkit-line-clamp:unset!important}
+.okv{overflow-y:auto;justify-content:safe center}.okv>*{flex:none}
+.okv.still,.okv.still *{animation:none!important}.okv.still b,.okv.still span{opacity:1}.okv.still .okc,.okv.still .okp{stroke-dashoffset:0}
 
 </style></head><body>
 <div id="app"><div class="scr"><div class="load"><span class="spin2"></span></div></div></div>
@@ -495,7 +497,7 @@ function qrun(){
  if(QRUN) return; var job=Q[0]; if(!job){ qguard(); return } QRUN=true;
  var steps=job.steps.slice(), next=function(){
   var s=steps.shift(); if(!s){ Q.shift(); QRUN=false; if(job.done) job.done(); qguard(); if(!Q.length) refreshStaff(true); qrun(); return }
-  post(s,function(r){ if(r&&r.ok!==false){ if(s._then) s._then(r); next() } else { if(S.ok&&S.ok.ready===job.id){ S.ok.wait=0; S.ok.link=''; try{render(true)}catch(x){} } Q.shift(); QRUN=false; toast('№'+job.id+': '+((r&&r.msg)||L('saqlanmadi','не сохранено')),1); refreshStaff(true); qguard(); qrun() } },true) };
+  post(s,function(r){ if(r&&r.ok!==false){ if(s._then) s._then(r); next() } else { if(S.ok&&S.ok.ready===job.id){ S.ok.wait=0; S.ok.link=''; try{render(true)}catch(x){} } Q.shift(); QRUN=false; try{ if(job.fail) job.fail(r) }catch(x){} toast('№'+job.id+': '+((r&&r.msg)||L('saqlanmadi','не сохранено')),1); refreshStaff(true); qguard(); qrun() } },true) };
  next();
 }
 var LGQ={};
@@ -908,7 +910,18 @@ function vCo(){ var h='<div class="scr">'+hdr(L('Qarzdorlar','Должники')
 function coRes(){ var q=(S.coq||'').trim().toLowerCase(), Ls=SF.co.list.filter(function(c){return !q||String(c.label).toLowerCase().indexOf(q)>=0});
  if(!Ls.length) return '<div class="empty">—</div>';
  return Ls.map(function(c){ var i=SF.co.list.indexOf(c); return '<button class="cli" data-co="'+i+'" style="margin-top:10px;padding:12px 14px"><span class="av sm2"'+(c.bal<0?' style="color:#4cf04a"':' style="color:var(--sale)"')+'>'+esc(String(c.label||'?').charAt(0).toUpperCase())+'</span><span style="flex:1;min-width:0;text-align:left"><b>'+esc(c.label)+'</b><span class="sm">'+L('Buyurtmalar: ','Заказов: ')+c.n+(c.paid?' · '+L('to‘langan ','оплачено ')+num(c.paid):'')+'</span></span><span style="font:700 15px var(--f-head);white-space:nowrap;color:'+(c.bal<0?'#4cf04a':'var(--sale)')+'">'+(c.bal<0?'+'+num(-c.bal):num(c.bal))+'</span></button>' }).join('') }
-function coLoad(){ SF.co=null; post({act:'bl'},function(r){ if(!r||!r.ok){ SF.co={err:(r&&r.msg)||L('Aloqa xatosi','Ошибка связи')} } else SF.co={list:(r.list||[]).concat((r.adv||[]).map(function(a){return {key:a.key,label:a.label,bal:-a.avans,n:a.n,paid:a.paid,debt:a.debt}})),total:r.total||0}; if(S.v==='co') render(true) },true) }
+/* kesh: ro'yxat (lp_co) va har bir kompaniya (lp_cod) — darrov ko'rsatiladi, server orqada yangilaydi */
+var COD=lsGet('lp_cod')||{};
+function coTyping(){ var a=document.activeElement; return !!(a&&a.tagName==='INPUT') }
+function coBusy(){ return Q.length>0||QRUN }
+function coSet(r){ SF.co={list:(r.list||[]).concat((r.adv||[]).map(function(a){return {key:a.key,label:a.label,bal:-a.avans,n:a.n,paid:a.paid,debt:a.debt}})),total:r.total||0} }
+function coLoad(){ var c=lsGet('lp_co'); if(!SF.co||SF.co.err){ if(c&&c.ok) coSet(c); else SF.co=null }
+ post({act:'bl'},function(r){ if(coBusy()) return;
+  if(r&&r.ok){ lsSet('lp_co',r); coSet(r); coPrefetch() } else if(!SF.co) SF.co={err:(r&&r.msg)||L('Aloqa xatosi','Ошибка связи')};
+  if(S.v==='co'&&!coTyping()) render(true) },true) }
+function coPrefetch(){ var ks=(SF.co&&SF.co.list||[]).map(function(c){return c.key}).slice(0,40), i=0;
+ var nx=function(){ if(i>=ks.length||coBusy()) return; var k=ks[i++]; post({act:'bd',k:k},function(r){ if(r&&r.ok&&!coBusy()){ COD[k]=r; lsSet('lp_cod',COD); if(S.v==='codet'&&S.cod&&S.cod.key===k&&!coTyping()){ S.cod.r=r; render(true) } } nx() },true) };
+ nx() }
 function vCoDet(){ var c=S.cod, r=c.r, h='<div class="scr">'+hdr(esc(c.label),L('Qarzdor','Должник'),0,0,'cob');
  if(!r) return h+'<div class="load"><span class="spin2"></span></div></div>'+nav();
  if(!r.ok) return h+'<div class="msg err">'+esc(r.msg||'')+'</div></div>'+nav();
@@ -917,12 +930,37 @@ function vCoDet(){ var c=S.cod, r=c.r, h='<div class="scr">'+hdr(esc(c.label),L(
  if(r.pays&&r.pays.length){ h+='<div class="lbl">'+L('To‘lovlar','Оплаты')+'</div>'; r.pays.forEach(function(p){ h+='<div class="strow"><span style="min-width:0"><b>'+esc(p.date)+'</b><span class="sm" style="display:block">'+esc(p.who)+(p.note?' · '+esc(p.note):'')+'</span></span><span class="r">'+fmt(p.amount)+'</span></div>' }) }
  h+='<div class="lbl">'+L('Qarzga olingan buyurtmalar','Заказы в долг')+'</div>'; (r.orders||[]).forEach(function(o){ h+='<div class="strow"><span style="min-width:0"><b>'+esc(o.name)+'</b><span class="sm" style="display:block">№'+esc(o.id)+' · '+esc(o.qty)+L(' dona',' шт.')+' · '+esc(o.date)+(o.by?' · '+esc(o.by):'')+'</span></span><span class="r">'+fmt(o.amount)+'</span></div>' });
  return h+'</div>'+nav() }
-function coDet(c){ S.cod={key:c.key,label:c.label,r:null}; S.v='codet'; render(); post({act:'bd',k:c.key},function(r){ if(S.cod&&S.cod.key===c.key){ S.cod.r=r||{ok:false,msg:L('Aloqa xatosi','Ошибка связи')}; render(true) } },true) }
+function coDet(c){ var k=c.key; S.cod={key:k,label:c.label,r:COD[k]||null}; S.v='codet'; render();
+ if(coBusy()) return;
+ post({act:'bd',k:k},function(r){ if(coBusy()) return; if(r&&r.ok){ COD[k]=r; lsSet('lp_cod',COD) }
+  if(S.cod&&S.cod.key===k){ if(r&&r.ok){ S.cod.r=r; if(!coTyping()) render(true) } else if(!S.cod.r){ S.cod.r=r||{ok:false,msg:L('Aloqa xatosi','Ошибка связи')}; render(true) } } },true) }
+/* guruh/chatga yuboriladigan xabar (uz + ru) */
+function coSum(n){ return num(n)+' so‘m' }
+function coMsg(r,amt){ var prevPaid=Number(r.paid)||0, nowPaid=prevPaid+amt, cum=0, cl=[];
+ (r.orders||[]).slice().sort(function(a,b){return dkey(a.date)-dkey(b.date)}).forEach(function(o){ cum+=Number(o.amount)||0; if(cum>prevPaid&&cum<=nowPaid) cl.push(o.id) });
+ var nb=(Number(r.bal)||0)-amt, Lr=['✅ To‘lov qabul qilindi / Оплата получена','🏢 '+r.label,'💵 '+coSum(amt)];
+ if(cl.length) Lr.push('🧾 Yopildi / Закрыты: №'+cl.join(', №'));
+ Lr.push('');
+ if(nb>0) Lr.push('📌 Qoldiq qarz / Остаток долга: '+coSum(nb));
+ else { Lr.push('🎉 Qarz to‘liq yopildi / Долг полностью закрыт'); if(nb<0) Lr.push('💰 Predoplata / Предоплата: '+coSum(-nb)) }
+ Lr.push(''); Lr.push('Rahmat! / Спасибо! — Laser Point');
+ return Lr.join('\n') }
 function coPay(){ var c=S.cod, r=c.r, amt=Math.round(Number(String(c.amt||'').replace(/\D/g,'')));
  if(!(amt>0)){ toast(L('Summani kiriting','Введите сумму'),1); return }
  var msg=L('To‘lovni qabul qilasizmi: ','Принять оплату ')+fmt(amt)+' — '+r.label+'?'+(amt>Math.max(r.bal,0)?'\n'+L('⚠️ Qarzdan ko‘p — farqi avans bo‘ladi: ','⚠️ Больше долга — разница станет авансом: ')+fmt(amt-Math.max(r.bal,0)):'');
- var go=function(){ post({act:'bp',k:r.key,a:amt,n:c.note||''},function(x){ if(!x||!x.ok){ toast((x&&x.msg)||L('Aloqa xatosi','Ошибка связи'),1); return } S.ok={title:L('To‘lov qabul qilindi','Оплата принята'),sub:L('Qolgan qarz: ','Остаток: ')+fmt(x.bal)}; render(); setTimeout(function(){ S.ok=null; coLoad(); coDet({key:r.key,label:r.label}) },1600) }) };
+ var go=function(){ var key=r.key, prev=Number(r.bal)||0, nb=prev-amt, note=c.note||'', txt=coMsg(r,amt);
+  // ekran darrov: mahalliy hisob
+  r.bal=nb; r.paid=(Number(r.paid)||0)+amt; var d=new Date(); r.pays=[{date:('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+d.getFullYear(),who:USERNAME||'Admin',note:note,amount:amt}].concat(r.pays||[]);
+  COD[key]=r; lsSet('lp_cod',COD);
+  if(SF.co&&SF.co.list){ SF.co.list.forEach(function(it){ if(it.key===key){ it.bal=nb; it.paid=(Number(it.paid)||0)+amt } }); SF.co.total=Math.max((Number(SF.co.total)||0)-Math.min(amt,Math.max(prev,0)),0) }
+  c.amt=''; c.note='';
+  S.ok={title:L('To‘lov qabul qilindi','Оплата принята'),sub:nb>0?L('Qolgan qarz: ','Остаток: ')+fmt(nb):nb<0?L('Qarz yopildi · avans: ','Долг закрыт · аванс: ')+fmt(-nb):L('Qarz to‘liq yopildi','Долг полностью закрыт'),share:txt};
+  render();
+  qpush({id:r.label,steps:[{act:'bp',k:key,a:amt,n:note}],done:function(){ setTimeout(function(){ if(!coBusy()){ coLoad(); post({act:'bd',k:key},function(x){ if(x&&x.ok&&!coBusy()){ COD[key]=x; lsSet('lp_cod',COD); if(S.v==='codet'&&S.cod&&S.cod.key===key&&!coTyping()&&!S.ok){ S.cod.r=x; render(true) } } },true) } },300) },fail:function(){ delete COD[key]; lsSet('lp_cod',COD); SF.co=null; coLoad(); if(S.v==='codet'&&S.cod&&S.cod.key===key) coDet({key:key,label:r.label}) }}) };
  try{ if(tg&&tg.showConfirm){ tg.showConfirm(msg,function(ok){ if(ok) go() }); return } }catch(e){} go() }
+/* iPhone/Android'ning o'z «Ulashish» oynasi → Telegram → akkaunt → chat */
+function shareText(t){ try{ if(navigator.share){ navigator.share({text:t}).catch(function(e){ if(!(e&&e.name==='AbortError')) shareExt(t) }); return } }catch(e){} shareExt(t) }
+function shareExt(t){ openExt('https://ulug7262-pixel.github.io/katalog/share.html#'+encodeURIComponent(t)) }
 
 /* ===== Admin: statistika ===== */
 var ST={d:null,sec:null,y:null,m:null};
@@ -951,8 +989,8 @@ function vStats(){ var h='<div class="scr">', d=ST.d;
 
 
 /* ===== Ustki qatlamlar ===== */
-function okv(){ if(!S.ok) return ''; var c=S.ok.red?'#FF7154':'#2BD91F';
- return '<div class="okv"><svg width="120" height="120" viewBox="0 0 120 120"><circle class="okc" cx="60" cy="60" r="52" fill="none" stroke="'+c+'" stroke-width="6" stroke-linecap="round"/><path class="okp" d="M38 62l15 15 30-32" fill="none" stroke="'+c+'" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg><b>'+S.ok.title+'</b><span>'+(S.ok.sub||'')+'</span>'+(S.ok.ready?'<div style="width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px;margin-top:10px">'+(S.ok.wait?'<button class="cta" style="height:54px;background:#2AABEE;color:#fff;opacity:.6" disabled><span class="spin2" style="display:inline-block;width:16px;height:16px;vertical-align:-3px;border-top-color:#fff"></span> '+L('Saqlanmoqda…','Сохраняется…')+'</button>':S.ok.link?'<button class="cta" style="height:54px;background:#2AABEE;color:#fff" data-ready="1">✈ '+L('Mijozga yozish: buyurtma tayyor','Написать клиенту: заказ готов')+'</button>':'<div class="sm" style="text-align:center">'+L('Mijozning username yoki raqami yo‘q — xabar yuborib bo‘lmaydi','Нет username или номера клиента')+'</div>')+'<button class="sec2" style="margin-top:0" data-okx="1">'+(S.ok.link?L('Keyinroq','Позже'):L('Yopish','Закрыть'))+'</button></div>':'')+'</div>' }
+function okv(){ if(!S.ok) return ''; var c=S.ok.red?'#FF7154':'#2BD91F', o=S.ok, st=o._s?' still':''; if(!o._s) setTimeout(function(){ o._s=1 },1400);
+ return '<div class="okv'+st+'"><svg width="120" height="120" viewBox="0 0 120 120"><circle class="okc" cx="60" cy="60" r="52" fill="none" stroke="'+c+'" stroke-width="6" stroke-linecap="round"/><path class="okp" d="M38 62l15 15 30-32" fill="none" stroke="'+c+'" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg><b>'+S.ok.title+'</b><span>'+(S.ok.sub||'')+'</span>'+(S.ok.ready?'<div style="width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px;margin-top:10px">'+(S.ok.wait?'<button class="cta" style="height:54px;background:#2AABEE;color:#fff;opacity:.6" disabled><span class="spin2" style="display:inline-block;width:16px;height:16px;vertical-align:-3px;border-top-color:#fff"></span> '+L('Saqlanmoqda…','Сохраняется…')+'</button>':S.ok.link?'<button class="cta" style="height:54px;background:#2AABEE;color:#fff" data-ready="1">✈ '+L('Mijozga yozish: buyurtma tayyor','Написать клиенту: заказ готов')+'</button>':'<div class="sm" style="text-align:center">'+L('Mijozning username yoki raqami yo‘q — xabar yuborib bo‘lmaydi','Нет username или номера клиента')+'</div>')+'<button class="sec2" style="margin-top:0" data-okx="1">'+(S.ok.link?L('Keyinroq','Позже'):L('Yopish','Закрыть'))+'</button></div>':'')+(S.ok.share?'<div class="sm" style="white-space:pre-wrap;text-align:left;background:var(--card,#18212B);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 12px;margin-top:12px;width:100%;max-width:340px;box-sizing:border-box;max-height:34vh;overflow:auto">'+esc(S.ok.share)+'</div><div style="width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px;margin-top:10px"><button class="cta" style="height:54px;min-height:54px;flex:none;background:#2AABEE;color:#fff" data-share="1">✈ '+L('Yuborish','Отправить')+'</button><button class="sec2" style="margin-top:0" data-okx="1">'+L('Yopish','Закрыть')+'</button></div>':'')+'</div>' }
 function cxv(){
  if(S.cx){ var c=S.cx, o=c.o; return '<div class="sheet c"><div class="cbox"><span class="cxi">'+ICON.x+'</span><b>№'+esc(o.id)+(c.who==='client'?L(' bronni bekor qilasizmi?',' — отменить бронь?'):L(' bekor qilinsinmi?',' — отменить заказ?'))+'</b><span class="sm">'+esc(o.name)+' · '+esc(o.qty)+L(' dona',' шт.')+'<br>'+L('Soni omborga qaytadi','Количество вернётся на склад')+(c.who==='staff'?L(', buyurtma jadvaldan o‘chadi.',', заказ удалится из таблицы.'):'.')+'</span><button class="cyes" data-cxy="1">'+L('Ha, bekor qilish','Да, отменить')+'</button><button class="cno" data-cxn="1">'+L('Yo‘q, orqaga','Нет, назад')+'</button></div></div>' }
  if(S.cxa) return '<div class="okv cxa"><svg width="120" height="120" viewBox="0 0 120 120"><circle class="okc" cx="60" cy="60" r="52" fill="none" stroke="#FF7154" stroke-width="6" stroke-linecap="round"/><path class="xl1" d="M42 42l36 36" fill="none" stroke="#FF7154" stroke-width="8" stroke-linecap="round"/><path class="xl2" d="M78 42 42 78" fill="none" stroke="#FF7154" stroke-width="8" stroke-linecap="round"/></svg><b>'+L('Bekor qilindi','Отменено')+'</b><span>№'+esc(S.cxa.o.id)+L(' · soni omborga qaytdi',' · количество вернулось на склад')+'</span></div>';
@@ -1049,6 +1087,7 @@ document.addEventListener('click',function(e){
  if(d.cxy){ cxYes(); return }
  if(d.ready){ var lk=S.ok&&S.ok.link; S.ok=null; render(true); if(lk) openTg(lk); return }
  if(d.okx){ S.ok=null; render(true); return }
+ if(d.share){ if(S.ok&&S.ok.share) shareText(S.ok.share); return }
  if(d.dfb){ var F=S.df; if(F.step==='check'){ F.step='pay' } else if(F.step==='pay'&&!F.recv&&(F.photo||engKind(F.o)==='yes')){ F.step='photo' } else if(F.step==='pay'&&!F.recv&&F.asked){ F.step='ask'; F.se=false } else { S.df=null; S.v='staff' } render(true); return }
  if(d.dask!==undefined){ var F2=S.df; F2.asked=1; if(d.dask==='1'){ F2.step='photo' } else { F2.se=true; F2.step='pay' } render(); dfAvans(); return }
  if(d.pick){ var pk=d.pick.split(':'); S.df.ch=pk[1]; var fi2=$(pk[0]==='cam'?'fcam':(pk[1]==='check'?'fgalm':'fgal')); fi2.value=''; fi2.click(); return }
