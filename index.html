@@ -672,7 +672,8 @@ function orderStart(x){
  if(!INIT()){ S.o.step='err'; S.o.err=L('Buyurtma berish uchun botda bir marta ro‘yxatdan o‘ting.','Чтобы заказать, зарегистрируйтесь в боте.'); S.o.bot=1; render(); return }
  // oldingi tekshiruv saqlangan bo'lsa — darrov keyingi qadam, server orqada tekshiradi
  var kc=lsGet('lp_chk'), quick=!!(kc&&kc.ok);
- if(quick){ var c0={}; for(var k in kc) c0[k]=kc[k]; c0.ostatok=Number(x.qty)||0; orderGot(c0) } else render();
+ if(!quick){ kc={ok:true,staff:isStaff(),min:1,rules:{},opt:{no:L('Gravirovkasiz','Без гравировки'),yes:L('Gravirovka bilan','С гравировкой'),book:L('⏳ Bron','⏳ Бронь')}}; quick=true }
+ var c0={}; for(var k in kc) c0[k]=kc[k]; c0.ostatok=Number(x.qty)||0; orderGot(c0);
  api({act:'chk',d:INIT(),id:x.id},function(c){ if(S.v!=='order'||!S.o||S.o.x!==x) return;
   if(c&&c.ok){ var sv={}; for(var k in c) if(k!=='ostatok') sv[k]=c[k]; lsSet('lp_chk',sv); if(quick&&S.o.c){ S.o.c.ostatok=c.ostatok; S.o.c.min=c.min; S.o.c.rules=c.rules; S.o.c.opt=c.opt; return } }
   else if(quick&&!(c&&(c.code==='reg'||c.code==='auth'||c.code==='admin'))) return;
@@ -862,14 +863,14 @@ function dfFinish(){ var F=S.df, o=F.o, steps=[], payV={cash:'naxt',card:'karta'
  if(F.se) steps.push({act:'se',id:o.id,row:o.row});
  if(F.pay!=='avans') steps.push({act:'sp',id:o.id,row:o.row,p:F.pay});
  F.checks.forEach(function(u){ steps.push({act:'sk',id:o.id,row:o.row,img:u}) });
- if(!F.recv) steps.push({act:'sd',id:o.id,row:o.row,_then:function(r){ if(S.ok&&S.ok.ready===o.id){ S.ok.link=r&&r.link||''; S.ok.wait=0; render(true) } }});
+ if(!F.recv) steps.push({act:'sd',id:o.id,row:o.row,_then:function(r){ if(S.ok&&S.ok.ready===o.id&&r&&r.link){ S.ok.link=r.link; render(true) } }});
  qpush({id:o.id,steps:steps,done:function(){ loadDone(true) }});
  var r=SF.list;
  if(F.recv){ dropLocal(o,'debt') }
  else { dropLocal(o,'open'); if(F.pay==='later'&&r){ var d=Object.assign({},o,{amount:o.full||o.amount,photo:F.photo||''}); r.debt.unshift(d); r.total=(r.total||0)+(+d.amount||0); lsSet('lp_sl',r) } }
  if(F.pay!=='later'&&DL&&DL.list){ var t=new Date(); DL.list.unshift({id:o.id,row:o.row,name:o.name,qty:o.qty,engr:o.engr,date:('0'+t.getDate()).slice(-2)+'.'+('0'+(t.getMonth()+1)).slice(-2)+'.'+t.getFullYear(),sum:o.full||o.amount,pay:payV,pic:o.pic||'',wp:F.photo||'',cust:o.cust,phone:o.phone,company:o.company,fw:o.fw,tgu:o.tgu}) }
- S.df=null; S.v='staff';
- S.ok={ready:F.recv?0:o.id,wait:F.recv?0:1,title:F.pay==='later'?L('Qarzga yozildi','Записано в долг'):F.pay==='avans'?L('Avansdan to‘landi','Оплачено с аванса'):F.recv?L('To‘lov qabul qilindi','Оплата принята'):L('Buyurtma yopildi','Заказ закрыт'),sub:'№'+esc(o.id)+(F.pay&&PAYS[F.pay]&&F.pay!=='later'?' · '+L(PAYS[F.pay][0],PAYS[F.pay][1]):'')};
+ S.df=null; S.v='staff'; var qlk=F.recv?'':readyLinkLocal(o);
+ S.ok={ready:F.recv?0:o.id,wait:0,link:qlk,title:F.pay==='later'?L('Qarzga yozildi','Записано в долг'):F.pay==='avans'?L('Avansdan to‘landi','Оплачено с аванса'):F.recv?L('To‘lov qabul qilindi','Оплата принята'):L('Buyurtma yopildi','Заказ закрыт'),sub:'№'+esc(o.id)+(F.pay&&PAYS[F.pay]&&F.pay!=='later'?' · '+L(PAYS[F.pay][0],PAYS[F.pay][1]):'')};
  if(F.recv){ render(); setTimeout(function(){ S.ok=null; render(true) },1600) } else render() }
 
 /* ===== O'zgartirish va bronni tasdiqlash ===== */
@@ -996,6 +997,12 @@ function vStats(){ var h='<div class="scr">', d=ST.d;
   b.prod.forEach(function(p,i){ h+='<div class="strow"><span style="min-width:0"><b>'+(i<3?med[i]:(i+1)+'.')+' '+esc(p.n)+'</b><span class="sm" style="display:block">'+p.o+L(' ta buyurtma · ',' заказов · ')+fmt(p.s)+'</span></span><span class="r">'+p.q+L(' dona',' шт.')+'</span></div>' }) }
  return h+'</div>'+nav() }
 
+/* «buyurtma tayyor» havolasi — darrov (rasmsiz); server rasmli havolani bersa almashtiriladi */
+function readyLinkLocal(o){ var ci=contactInfo(o), tl=ci.tg; if(!tl) return '';
+ var id=o.id, nm=o.name||'', q=o.qty||'';
+ var msg='✅ №'+id+' buyurtmangiz tayyor\n'+nm+' · '+q+' dona\nOlib ketishingiz mumkin.\n\n✅ Ваш заказ №'+id+' готов\n'+nm+' · '+q+' шт.\nМожно забирать.\n\nLaser Point';
+ return tl+'?text='+encodeURIComponent(msg) }
+
 
 /* ===== Ustki qatlamlar ===== */
 function okv(){ if(!S.ok) return ''; var c=S.ok.red?'#FF7154':'#2BD91F', o=S.ok, st=o._s?' still':''; if(!o._s) setTimeout(function(){ o._s=1 },1400);
@@ -1010,13 +1017,14 @@ function toast(t,err){ S.toast=t; S.toastErr=err?1:0; var el=$('toast'); if(!el)
 
 /* ===== Chizish ===== */
 var VIEWS={home:vHome,folder:vFolder,prod:vProd,order:vOrder,my:vMy,staff:vStaff,dflow:vDflow,edit:vEdit,svc:vSvc,co:vCo,codet:vCoDet,stats:vStats};
-function render(keep){ var sc=document.querySelector('#app .scr'), y=keep&&sc?sc.scrollTop:0;
+function render(keep){ var sc=document.querySelector('#app .scr'), y=keep&&sc?sc.scrollTop:0, ae=document.activeElement, keepId=ae&&ae.tagName==='INPUT'&&ae.type!=='file'&&ae.id?ae.id:'';
  if(!VIEWS[S.v]) S.v='home';
  $('app').innerHTML=VIEWS[S.v]()+okv()+cxv()+sheetv();
  var n=document.querySelector('#app .scr'); if(n) n.scrollTop=keep?y:0;
  if(S.v==='prod') bindGallery();
  var f=S.v==='edit'&&S.ed&&!S.ed.load?'en':S.v==='order'&&S.o&&S.o.step==='qty'?'qn':S.v==='svc'&&S.sv&&(S.sv.step==='qty'||S.sv.step==='price')?'svn':(S.v==='order'||S.v==='svc')&&pkCtx()&&pkCtx().pk&&pkCtx().pk.mode==='free'?'fw':'';
- if(f&&!S.ok){ var el=$(f); if(el){ try{ el.focus(); var v=el.value; el.setSelectionRange(v.length,v.length) }catch(e){} } }
+ if(!f&&keepId&&!S.ok&&$(keepId)) f=keepId; // yozib turgan maydon qayta chizilsa — klaviatura yopilmasin
+ if(f&&!S.ok){ var el=$(f); if(el){ try{ el.focus({preventScroll:true}); var v=el.value; el.setSelectionRange(v.length,v.length) }catch(e){} } }
 }
 function updRes(){ var r=$('res'); if(!r) return;
  if(S.v==='folder'){ r.innerHTML=folderRes(); var c=$('fcnt'); if(c) c.textContent=folderItems().length+L(' ta tovar',' товаров') }
