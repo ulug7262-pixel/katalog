@@ -873,7 +873,7 @@ function dfFinish(){ var F=S.df, o=F.o, steps=[], payV={cash:'naxt',card:'karta'
  else { dropLocal(o,'open'); if(F.pay==='later'&&r){ var d=Object.assign({},o,{amount:o.full||o.amount,photo:F.photo||''}); r.debt.unshift(d); r.total=(r.total||0)+(+d.amount||0); lsSet('lp_sl',r) } }
  if(F.pay!=='later'&&DL&&DL.list){ var t=new Date(); DL.list.unshift({id:o.id,row:o.row,name:o.name,qty:o.qty,engr:o.engr,date:('0'+t.getDate()).slice(-2)+'.'+('0'+(t.getMonth()+1)).slice(-2)+'.'+t.getFullYear(),sum:o.full||o.amount,pay:payV,pic:o.pic||'',wp:F.photo||'',cust:o.cust,phone:o.phone,company:o.company,fw:o.fw,tgu:o.tgu}) }
  S.df=null; S.v='staff'; var qlk=F.recv?'':readyLinkLocal(o);
- S.ok={ready:F.recv?0:o.id,wait:0,link:qlk,title:F.pay==='later'?L('Qarzga yozildi','Записано в долг'):F.pay==='avans'?L('Avansdan to‘landi','Оплачено с аванса'):F.recv?L('To‘lov qabul qilindi','Оплата принята'):L('Buyurtma yopildi','Заказ закрыт'),sub:'№'+esc(o.id)+(F.pay&&PAYS[F.pay]&&F.pay!=='later'?' · '+L(PAYS[F.pay][0],PAYS[F.pay][1]):'')};
+ S.ok={ready:F.recv?0:o.id,row:o.row,wait:0,link:qlk,title:F.pay==='later'?L('Qarzga yozildi','Записано в долг'):F.pay==='avans'?L('Avansdan to‘landi','Оплачено с аванса'):F.recv?L('To‘lov qabul qilindi','Оплата принята'):L('Buyurtma yopildi','Заказ закрыт'),sub:'№'+esc(o.id)+(F.pay&&PAYS[F.pay]&&F.pay!=='later'?' · '+L(PAYS[F.pay][0],PAYS[F.pay][1]):'')};
  if(F.recv){ render(); setTimeout(function(){ S.ok=null; render(true) },1600) } else render() }
 
 /* ===== O'zgartirish va bronni tasdiqlash ===== */
@@ -1105,7 +1105,7 @@ document.addEventListener('click',function(e){
  if(d.scx){ var ox=findO(d.scx,'open'); if(ox){ S.cx={who:'staff',o:ox}; render(true) } return }
  if(d.cxn){ S.cx=null; render(true); return }
  if(d.cxy){ cxYes(); return }
- if(d.ready){ var lk=S.ok&&S.ok.link; S.ok=null; render(true); if(lk) openReady(lk); return }
+ if(d.ready){ var ok0=S.ok; S.ok=null; render(true); if(ok0&&ok0.link){ qpush({id:ok0.ready,steps:[{act:'rs',id:ok0.ready,row:ok0.row}]}); openTg('https://t.me/laserpointzakazbot') } return }
  if(d.okx){ S.ok=null; render(true); return }
  if(d.share){ if(S.ok&&S.ok.share) shareText(S.ok.share); return }
  if(d.dfb){ var F=S.df; if(F.step==='check'){ F.step='pay' } else if(F.step==='pay'&&!F.recv&&(F.photo||engKind(F.o)==='yes')){ F.step='photo' } else if(F.step==='pay'&&!F.recv&&F.asked){ F.step='ask'; F.se=false } else { S.df=null; S.v='staff' } render(true); return }
