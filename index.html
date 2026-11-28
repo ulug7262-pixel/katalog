@@ -916,12 +916,11 @@ function coTyping(){ var a=document.activeElement; return !!(a&&a.tagName==='INP
 function coBusy(){ return Q.length>0||QRUN }
 function coSet(r){ SF.co={list:(r.list||[]).concat((r.adv||[]).map(function(a){return {key:a.key,label:a.label,bal:-a.avans,n:a.n,paid:a.paid,debt:a.debt}})),total:r.total||0} }
 function coLoad(){ var c=lsGet('lp_co'); if(!SF.co||SF.co.err){ if(c&&c.ok) coSet(c); else SF.co=null }
- post({act:'bl'},function(r){ if(coBusy()) return;
-  if(r&&r.ok){ lsSet('lp_co',r); coSet(r); coPrefetch() } else if(!SF.co) SF.co={err:(r&&r.msg)||L('Aloqa xatosi','Ошибка связи')};
+ post({act:'ba'},function(r){ if(coBusy()) return;
+  if(r&&r.ok){ if(r.det){ COD=r.det; lsSet('lp_cod',COD); delete r.det } lsSet('lp_co',r); coSet(r);
+   if(S.v==='codet'&&S.cod&&COD[S.cod.key]&&!coTyping()&&!S.ok){ S.cod.r=COD[S.cod.key]; render(true) } }
+  else if(!SF.co) SF.co={err:(r&&r.msg)||L('Aloqa xatosi','Ошибка связи')};
   if(S.v==='co'&&!coTyping()) render(true) },true) }
-function coPrefetch(){ var ks=(SF.co&&SF.co.list||[]).map(function(c){return c.key}).slice(0,40), i=0;
- var nx=function(){ if(i>=ks.length||coBusy()) return; var k=ks[i++]; post({act:'bd',k:k},function(r){ if(r&&r.ok&&!coBusy()){ COD[k]=r; lsSet('lp_cod',COD); if(S.v==='codet'&&S.cod&&S.cod.key===k&&!coTyping()){ S.cod.r=r; render(true) } } nx() },true) };
- nx() }
 function vCoDet(){ var c=S.cod, r=c.r, h='<div class="scr">'+hdr(esc(c.label),L('Qarzdor','Должник'),0,0,'cob');
  if(!r) return h+'<div class="load"><span class="spin2"></span></div></div>'+nav();
  if(!r.ok) return h+'<div class="msg err">'+esc(r.msg||'')+'</div></div>'+nav();
@@ -931,7 +930,7 @@ function vCoDet(){ var c=S.cod, r=c.r, h='<div class="scr">'+hdr(esc(c.label),L(
  h+='<div class="lbl">'+L('Qarzga olingan buyurtmalar','Заказы в долг')+'</div>'; (r.orders||[]).forEach(function(o){ h+='<div class="strow"><span style="min-width:0"><b>'+esc(o.name)+'</b><span class="sm" style="display:block">№'+esc(o.id)+' · '+esc(o.qty)+L(' dona',' шт.')+' · '+esc(o.date)+(o.by?' · '+esc(o.by):'')+'</span></span><span class="r">'+fmt(o.amount)+'</span></div>' });
  return h+'</div>'+nav() }
 function coDet(c){ var k=c.key; S.cod={key:k,label:c.label,r:COD[k]||null}; S.v='codet'; render();
- if(coBusy()) return;
+ if(coBusy()||COD[k]) return;
  post({act:'bd',k:k},function(r){ if(coBusy()) return; if(r&&r.ok){ COD[k]=r; lsSet('lp_cod',COD) }
   if(S.cod&&S.cod.key===k){ if(r&&r.ok){ S.cod.r=r; if(!coTyping()) render(true) } else if(!S.cod.r){ S.cod.r=r||{ok:false,msg:L('Aloqa xatosi','Ошибка связи')}; render(true) } } },true) }
 /* guruh/chatga yuboriladigan xabar (uz + ru) */
@@ -956,7 +955,7 @@ function coPay(){ var c=S.cod, r=c.r, amt=Math.round(Number(String(c.amt||'').re
   c.amt=''; c.note='';
   S.ok={title:L('To‘lov qabul qilindi','Оплата принята'),sub:nb>0?L('Qolgan qarz: ','Остаток: ')+fmt(nb):nb<0?L('Qarz yopildi · avans: ','Долг закрыт · аванс: ')+fmt(-nb):L('Qarz to‘liq yopildi','Долг полностью закрыт'),share:txt};
   render();
-  qpush({id:r.label,steps:[{act:'bp',k:key,a:amt,n:note}],done:function(){ setTimeout(function(){ if(!coBusy()){ coLoad(); post({act:'bd',k:key},function(x){ if(x&&x.ok&&!coBusy()){ COD[key]=x; lsSet('lp_cod',COD); if(S.v==='codet'&&S.cod&&S.cod.key===key&&!coTyping()&&!S.ok){ S.cod.r=x; render(true) } } },true) } },300) },fail:function(){ delete COD[key]; lsSet('lp_cod',COD); SF.co=null; coLoad(); if(S.v==='codet'&&S.cod&&S.cod.key===key) coDet({key:key,label:r.label}) }}) };
+  qpush({id:r.label,steps:[{act:'bp',k:key,a:amt,n:note}],done:function(){ setTimeout(function(){ if(!coBusy()) coLoad() },300) },fail:function(){ delete COD[key]; lsSet('lp_cod',COD); SF.co=null; coLoad(); if(S.v==='codet'&&S.cod&&S.cod.key===key) coDet({key:key,label:r.label}) }}) };
  try{ if(tg&&tg.showConfirm){ tg.showConfirm(msg,function(ok){ if(ok) go() }); return } }catch(e){} go() }
 /* iPhone/Android'ning o'z «Ulashish» oynasi → Telegram → akkaunt → chat */
 function shareText(t){ try{ if(navigator.share){ navigator.share({text:t}).catch(function(e){ if(!(e&&e.name==='AbortError')) shareExt(t) }); return } }catch(e){} shareExt(t) }
